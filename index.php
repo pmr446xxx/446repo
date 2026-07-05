@@ -134,7 +134,7 @@ include 'includes/navbar.php';
                 <div class="panel-title">
                     <div class="panel-title-left">
                         <i class="fa-solid fa-users"></i>
-                        <span>Operatorzy Online</span>
+                        <span>Operatorzy Online (183)</span>
                     </div>
                 </div>
 
@@ -183,55 +183,6 @@ include 'includes/navbar.php';
 
         </div>
 
-    </div>
-
-    <!-- PLANOWANE ŁĄCZNOŚCI -->
-    <div class="row">
-        <div class="col-lg-12">
-
-            <div class="panel">
-
-                <div class="panel-title">
-                    <div class="panel-title-left">
-                        <i class="fa-solid fa-calendar-days"></i>
-                        <span>Planowane Łączności</span>
-                    </div>
-                </div>
-
-                <div class="panel-body">
-
-                    <table class="table table-dark table-hover">
-
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Godzina (UTC)</th>
-                                <th>Operator</th>
-                                <th>Z</th>
-                                <th>Do</th>
-                                <th>Kanał</th>
-                                <th>Komentarz</th>
-                                <th>Akcje</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="plannedConnections">
-
-                            <tr>
-                                <td colspan="8" class="text-center text-secondary">
-                                    Brak zaplanowanych łączności
-                                </td>
-                            </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-        </div>
     </div>
 
 </div>
