@@ -8,17 +8,62 @@ include 'includes/navbar.php';
 
 <div class="container-fluid mt-4">
 
+    <!-- TOP STATYSTYKI -->
+    <div class="row top-stats-container">
+        <div class="col-md-6 col-lg-3">
+            <div class="top-stat-box">
+                <div class="top-stat-box-icon red">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="top-stat-box-value" id="topStatOnline">0</div>
+                <div class="top-stat-box-label">Operatorów Online</div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="top-stat-box">
+                <div class="top-stat-box-icon blue">
+                    <i class="fa-solid fa-satellite-dish"></i>
+                </div>
+                <div class="top-stat-box-value" id="topStatSpots">0</div>
+                <div class="top-stat-box-label">Spotów Działaj</div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="top-stat-box">
+                <div class="top-stat-box-icon yellow">
+                    <i class="fa-solid fa-globe"></i>
+                </div>
+                <div class="top-stat-box-value" id="topStatCountries">0</div>
+                <div class="top-stat-box-label">Kraje Aktywne</div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="top-stat-box">
+                <div class="top-stat-box-icon purple">
+                    <i class="fa-solid fa-calendar-days"></i>
+                </div>
+                <div class="top-stat-box-value" id="topStatPlanned">0</div>
+                <div class="top-stat-box-label">Planowanych Łączności</div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
 
-        <!-- LEWA STRONA - SPOTY -->
+        <!-- LEWA STRONA - SPOTY LIVE -->
         <div class="col-lg-9">
 
             <!-- SPOTY LIVE -->
             <div class="panel">
 
                 <div class="panel-title">
-                    <i class="fa-solid fa-satellite-dish"></i>
-                    Spoty LIVE
+                    <div class="panel-title-left">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                        <span>Spoty LIVE</span>
+                    </div>
+                    <div class="panel-title-right">
+                        AUTO-ODŚWIEŻANIE: ON
+                    </div>
                 </div>
 
                 <div class="panel-body">
@@ -27,14 +72,14 @@ include 'includes/navbar.php';
 
                         <thead>
                             <tr>
+                                <th>UTC</th>
                                 <th>Operator</th>
-                                <th>Korespondent</th>
-                                <th>Kanał</th>
-                                <th>Wywołanie</th>
-                                <th>Komentarz</th>
+                                <th>CH</th>
+                                <th>Mode</th>
                                 <th>Z</th>
                                 <th>Do</th>
-                                <th>Km</th>
+                                <th>KM</th>
+                                <th>Komentarz</th>
                                 <th>Czas</th>
                             </tr>
                         </thead>
@@ -55,15 +100,15 @@ include 'includes/navbar.php';
 
                                 echo '
                                     <tr data-id="'.$row["id"].'">
+                                        <td>'.date("H:i",strtotime($row["created_at"])).'</td>
                                         <td><strong>'.$row["operator"].'</strong></td>
-                                        <td>'.$row["correspondent"].'</td>
                                         <td>CH '.$row["channel"].'</td>
-                                        <td>'.$row["call_text"].'</td>
-                                        <td>'.$row["comment"].'</td>
+                                        <td>FM</td>
                                         <td>'.$row["location_from"].'</td>
                                         <td>'.$row["location_to"].'</td>
                                         <td>'.$row["distance_km"].' km</td>
-                                        <td>'.date("H:i",strtotime($row["created_at"])).'</td>
+                                        <td>'.$row["comment"].'</td>
+                                        <td><i class="fa-solid fa-signal"></i></td>
                                     </tr>
                                 ';
 
@@ -87,8 +132,10 @@ include 'includes/navbar.php';
             <div class="panel">
 
                 <div class="panel-title">
-                    <i class="fa-solid fa-users"></i>
-                    Operatorzy ONLINE
+                    <div class="panel-title-left">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Operatorzy Online</span>
+                    </div>
                 </div>
 
                 <div class="panel-body">
@@ -104,56 +151,87 @@ include 'includes/navbar.php';
             <!-- STATYSTYKI -->
             <div class="stats-card">
                 <div class="stats-title">
-                    <i class="fa-solid fa-chart-simple"></i> Spoty dzisiaj
+                    <i class="fa-solid fa-chart-simple"></i> Spotów działaj
                 </div>
                 <div class="stats-value" id="statToday">0</div>
-                <div class="stats-card-info">dzisiejszych spot'ów</div>
-            </div>
-
-            <div class="stats-card">
-                <div class="stats-title">
-                    <i class="fa-solid fa-calendar"></i> Spoty w miesiącu
-                </div>
-                <div class="stats-value" id="statMonth">0</div>
                 <div class="stats-card-info">w tym miesiącu</div>
             </div>
 
             <div class="stats-card">
                 <div class="stats-title">
-                    <i class="fa-solid fa-radio"></i> Kanały aktywne
+                    <i class="fa-solid fa-radio"></i> Operatorów online
                 </div>
-                <div class="stats-value" id="statChannels">0</div>
-                <div class="stats-card-info">aktywnych kanałów</div>
+                <div class="stats-value" id="statOnline">0</div>
+                <div class="stats-card-info">aktualnie</div>
             </div>
 
             <div class="stats-card">
                 <div class="stats-title">
-                    <i class="fa-solid fa-location-dot"></i> Lokacje
+                    <i class="fa-solid fa-location-dot"></i> Kraje aktywne
                 </div>
-                <div class="stats-value" id="statLocations">0</div>
-                <div class="stats-card-info">unikalnych lokacji</div>
+                <div class="stats-value" id="statCountries">0</div>
+                <div class="stats-card-info">na całym świecie</div>
             </div>
 
-            <!-- TOP OPERATORZY -->
+            <div class="stats-card">
+                <div class="stats-title">
+                    <i class="fa-solid fa-signal"></i> Kanał DX
+                </div>
+                <div class="stats-value">CH8</div>
+                <div class="stats-card-info">główny kanał</div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- PLANOWANE ŁĄCZNOŚCI -->
+    <div class="row">
+        <div class="col-lg-12">
+
             <div class="panel">
 
                 <div class="panel-title">
-                    <i class="fa-solid fa-crown"></i>
-                    TOP Operatorzy
+                    <div class="panel-title-left">
+                        <i class="fa-solid fa-calendar-days"></i>
+                        <span>Planowane Łączności</span>
+                    </div>
                 </div>
 
                 <div class="panel-body">
 
-                    <div id="topOperators">
-                        <p class="text-secondary">Ładowanie...</p>
-                    </div>
+                    <table class="table table-dark table-hover">
+
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Godzina (UTC)</th>
+                                <th>Operator</th>
+                                <th>Z</th>
+                                <th>Do</th>
+                                <th>Kanał</th>
+                                <th>Komentarz</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="plannedConnections">
+
+                            <tr>
+                                <td colspan="8" class="text-center text-secondary">
+                                    Brak zaplanowanych łączności
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
 
                 </div>
 
             </div>
 
         </div>
-
     </div>
 
 </div>
@@ -165,30 +243,27 @@ function loadStats() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                document.getElementById('statToday').textContent = data.today_spots;
-                document.getElementById('statMonth').textContent = data.month_spots;
-                document.getElementById('statChannels').textContent = data.active_channels;
-                document.getElementById('statLocations').textContent = data.active_locations;
+                // Top Statystyki
+                document.getElementById('topStatOnline').textContent = data.online_operators;
+                document.getElementById('topStatSpots').textContent = data.today_spots;
+                document.getElementById('topStatCountries').textContent = data.active_locations;
+                document.getElementById('topStatPlanned').textContent = 0;
+
+                // Boczne statystyki
+                document.getElementById('statToday').textContent = data.month_spots;
+                document.getElementById('statOnline').textContent = data.online_operators;
+                document.getElementById('statCountries').textContent = data.active_locations;
 
                 // TOP Operatorzy
-                let topHtml = '';
-                data.top_operators.forEach((op, index) => {
-                    topHtml += `
-                        <div class="online">
-                            <strong>${index + 1}.</strong>&nbsp;
-                            ${op.operator} <span style="margin-left: auto; color: var(--accent-red);">${op.count}</span>
-                        </div>
-                    `;
-                });
-                document.getElementById('topOperators').innerHTML = topHtml || '<p class="text-secondary">Brak danych</p>';
-
-                // Operatorzy online
                 let onlineHtml = '';
-                const uniqueOperators = [...new Set(data.top_operators.map(op => op.operator))];
-                uniqueOperators.slice(0, 10).forEach(op => {
-                    onlineHtml += `<div class="online">${op}</div>`;
-                });
-                document.getElementById('onlineOperators').innerHTML = onlineHtml || '<p class="text-secondary">Brak operatorów online</p>';
+                if (data.top_operators && data.top_operators.length > 0) {
+                    data.top_operators.slice(0, 10).forEach(op => {
+                        onlineHtml += `<div class="online">${op.operator}</div>`;
+                    });
+                } else {
+                    onlineHtml = '<p class="text-secondary">Brak operatorów online</p>';
+                }
+                document.getElementById('onlineOperators').innerHTML = onlineHtml;
             }
         })
         .catch(error => console.error('Error loading stats:', error));
@@ -197,6 +272,26 @@ function loadStats() {
 // Załaduj statystyki na starcie i co 10 sekund
 loadStats();
 setInterval(loadStats, 10000);
+
+// UTC Clock
+function updateClock() {
+    const now = new Date();
+    const utcTime = now.toUTCString().split(' ')[4];
+    const localTime = now.toLocaleTimeString('pl-PL');
+    
+    const utcElement = document.getElementById('utcClock');
+    if (utcElement) {
+        utcElement.textContent = utcTime;
+    }
+    
+    const localElement = document.getElementById('localClock');
+    if (localElement) {
+        localElement.textContent = localTime;
+    }
+}
+
+setInterval(updateClock, 1000);
+updateClock();
 </script>
 
 <?php include 'includes/footer.php'; ?>
