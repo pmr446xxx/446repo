@@ -45,8 +45,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
 
 <div class="col-lg-4 text-center">
 
-UTC
-<span id="utcClock">--:--:--</span>
+UTC <span id="utcClock">--:--:--</span>
+<br>
+<small id="localClock">--:--:--</small>
 
 </div>
 
