@@ -1,0 +1,482 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+
+    background:#0d0f12;
+
+    color:#ffffff;
+
+    font-family:'Inter',sans-serif;
+
+    font-size:15px;
+
+    line-height:1.5;
+
+}
+
+/* LINKI */
+
+a{
+    color:#ffffff;
+    text-decoration:none;
+    transition:.20s;
+}
+
+a:hover{
+    color:#ff3b3b;
+}
+
+/* TOP INFO */
+
+.top-info{
+    background:#080909;
+    border-bottom:1px solid #232323;
+    color:#bdbdbd;
+    font-size:13px;
+    padding:8px 0;
+}
+
+.top-info i{
+    color:#ff2d2d;
+    margin-right:6px;
+}
+
+/* NAVBAR */
+
+.main-navbar{
+    background:#121417;
+    border-bottom:1px solid #262626;
+    padding-top:16px;
+    padding-bottom:16px;
+}
+
+.logo{
+    line-height:1;
+}
+
+/* 🔥 ŻÓŁTE LOGO */
+.logo446{
+    font-size:40px;
+    font-weight:800;
+    color:#ffd000;
+    text-shadow:0 0 10px rgba(255,208,0,0.35);
+}
+
+.logoCluster{
+    font-size:40px;
+    font-weight:800;
+    color:#ffffff;
+}
+
+.logoSub{
+    margin-top:6px;
+    color:#9a9a9a;
+    font-size:12px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+}
+
+.navbar-nav .nav-link{
+    color:#d7d7d7 !important;
+    margin-left:10px;
+    margin-right:10px;
+    padding:10px 14px !important;
+    border-radius:6px;
+    font-size:14px;
+    font-weight:600;
+}
+
+.navbar-nav .nav-link:hover{
+    background:#1d1f23;
+    color:#ffffff !important;
+}
+
+.navbar-nav .active{
+    background:#c51d1d;
+    color:#fff !important;
+}
+
+.navbar-nav i{
+    margin-right:6px;
+}
+
+/* KONTENER */
+
+.container-fluid{
+    max-width:1700px;
+}/* ==========================================================
+   PANELS
+========================================================== */
+
+.panel{
+
+    background:#16191d;
+
+    border:1px solid #2b2f35;
+
+    border-radius:10px;
+
+    margin-bottom:25px;
+
+    overflow:hidden;
+
+    box-shadow:0 0 20px rgba(0,0,0,.25);
+
+}
+
+.panel-title{
+
+    background:#1c2025;
+
+    color:#ffffff;
+
+    padding:14px 18px;
+
+    font-size:18px;
+
+    font-weight:700;
+
+    border-bottom:1px solid #2c3138;
+
+}
+
+.panel-title i{
+    color:#ff3030;
+    margin-right:8px;
+}
+
+.panel-body{
+    padding:20px;
+}
+
+/* ==========================================================
+   TABLE
+========================================================== */
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+thead{
+    background:#20242a;
+}
+
+th{
+    padding:14px;
+    color:#ffffff;
+    font-size:13px;
+    font-weight:700;
+    text-transform:uppercase;
+    border-bottom:1px solid #343a43;
+}
+
+td{
+    padding:13px 14px;
+    color:#dddddd;
+    border-bottom:1px solid #272c33;
+}
+
+tbody tr{
+    transition:.20s;
+}
+
+tbody tr:hover{
+    background:#1d2228;
+}
+
+/* ==========================================================
+   STATUS
+========================================================== */
+
+/* 🔥 MIGAJĄCY ONLINE */
+.online{
+    color:#4dff88;
+    font-weight:700;
+    animation:blink 1.5s infinite;
+}
+
+.offline{
+    color:#888;
+}
+
+.dx{
+    color:#ff5252;
+    font-weight:700;
+}
+
+/* blink animation */
+@keyframes blink{
+    0%{opacity:1;}
+    50%{opacity:0.4;}
+    100%{opacity:1;}
+}
+
+/* ==========================================================
+   STATS
+========================================================== */
+
+.stats-card{
+
+    background:#181c21;
+
+    border:1px solid #2d3239;
+
+    border-radius:8px;
+
+    padding:18px;
+
+    margin-bottom:18px;
+
+    transition:.25s;
+
+}
+
+.stats-card:hover{
+    transform:translateY(-2px);
+    border-color:#c41f1f;
+}
+
+.stats-title{
+    color:#9fa6ad;
+    font-size:12px;
+    text-transform:uppercase;
+    margin-bottom:10px;
+}
+
+.stats-value{
+    color:#ffffff;
+    font-size:28px;
+    font-weight:700;
+}
+
+/* ==========================================================
+   BUTTONS
+========================================================== */
+
+.btn-red{
+    background:#d42020;
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    padding:10px 18px;
+    font-weight:600;
+}
+
+.btn-red:hover{
+    background:#ef2c2c;
+}
+
+.btn-dark2{
+    background:#20242a;
+    color:#fff;
+    border:1px solid #343a43;
+}
+
+.btn-dark2:hover{
+    background:#2a3037;
+}/* ==========================================================
+   LIVE BADGE (DX STYLE)
+========================================================== */
+
+.live-indicator{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    font-weight:700;
+    color:#ff3b3b;
+    text-transform:uppercase;
+}
+
+.live-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ff3b3b;
+    animation:pulse 1s infinite;
+    box-shadow:0 0 10px #ff3b3b;
+}
+
+@keyframes pulse{
+    0%{ transform:scale(1); opacity:1; }
+    50%{ transform:scale(1.5); opacity:0.3; }
+    100%{ transform:scale(1); opacity:1; }
+}
+
+/* ==========================================================
+   FOOTER
+========================================================== */
+
+.footer{
+
+    margin-top:40px;
+
+    padding:20px;
+
+    background:#101214;
+
+    border-top:1px solid #262626;
+
+    color:#888;
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+   SCROLLBAR
+========================================================== */
+
+::-webkit-scrollbar{
+    width:10px;
+}
+
+::-webkit-scrollbar-track{
+    background:#0d0f12;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#2d3238;
+    border-radius:10px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#c41f1f;
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media(max-width:1200px){
+    .logo446,
+    .logoCluster{
+        font-size:34px;
+    }
+}
+
+@media(max-width:992px){
+    .logo{
+        margin-bottom:15px;
+    }
+
+    .navbar-nav{
+        margin-top:15px;
+    }
+
+    .navbar-nav .nav-link{
+        margin:4px 0;
+    }
+}
+
+@media(max-width:768px){
+    .top-info{
+        text-align:center;
+    }
+
+    .panel-title{
+        font-size:16px;
+    }
+
+    th, td{
+        padding:10px;
+        font-size:13px;
+    }
+}
+
+@media(max-width:576px){
+    .logo446,
+    .logoCluster{
+        font-size:28px;
+    }
+
+    .logoSub{
+        font-size:10px;
+    }
+
+    body{
+        font-size:14px;
+    }
+}.live-row{
+    display:flex;
+    gap:12px;
+    padding:10px;
+    border-bottom:1px solid #262b33;
+    font-size:13px;
+    align-items:center;
+}
+
+.live-op{
+    color:#4dff88;
+    font-weight:700;
+    width:120px;
+}
+
+.live-title{
+    flex:1;
+    color:#ffffff;
+}
+
+.live-loc{
+    color:#ffd000;
+    width:160px;
+    text-align:right;
+}
+
+/* LIVE badge */
+.live-indicator{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#ff3b3b;
+    font-weight:700;
+}
+
+.live-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ff3b3b;
+    animation:pulse 1s infinite;
+    box-shadow:0 0 10px #ff3b3b;
+}
+
+@keyframes pulse{
+    0%{transform:scale(1);opacity:1;}
+    50%{transform:scale(1.5);opacity:0.3;}
+    100%{transform:scale(1);opacity:1;}
+}
+#spotsLive tr{
+
+transition:0.5s;
+
+}
+
+.newSpot{
+
+background:#ffe066 !important;
+
+color:#000 !important;
+
+animation:flash 0.8s infinite;
+
+}
+
+@keyframes flash{
+
+0%{opacity:1;}
+
+50%{opacity:.55;}
+
+100%{opacity:1;}
+
+}
