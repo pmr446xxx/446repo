@@ -165,29 +165,89 @@ include 'includes/navbar.php';
                 <div class="stats-card-info">aktualnie</div>
             </div>
 
-            <div class="stats-card">
-                <div class="stats-title">
-                    <i class="fa-solid fa-location-dot"></i> Kraje aktywne
-                </div>
-                <div class="stats-value" id="statCountries">0</div>
-                <div class="stats-card-info">na całym świecie</div>
-            </div>
-
-            <div class="stats-card">
-                <div class="stats-title">
-                    <i class="fa-solid fa-signal"></i> Kanał DX
-                </div>
-                <div class="stats-value">CH8</div>
-                <div class="stats-card-info">główny kanał</div>
-            </div>
-
         </div>
 
     </div>
 
 </div>
 
+<!-- AUDIO dla dźwięku -->
+<audio id="notificationSound" preload="auto">
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_d1718ab737.mp3" type="audio/mpeg">
+</audio>
+
 <script>
+let lastSpotId = 0;
+let isRefreshing = false;
+
+// Funkcja do ładowania spotów
+function loadSpots() {
+    if (isRefreshing) return;
+    isRefreshing = true;
+
+    fetch('api/get_spots.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.spots) {
+                const tbody = document.getElementById('spotsLive');
+                
+                // Dodaj nowe spoty na początek
+                data.spots.forEach(spot => {
+                    const existingRow = document.querySelector(`tr[data-id="${spot.id}"]`);
+                    
+                    if (!existingRow && spot.id > lastSpotId) {
+                        // Nowy spot!
+                        const newRow = document.createElement('tr');
+                        newRow.className = 'newSpot';
+                        newRow.setAttribute('data-id', spot.id);
+                        newRow.innerHTML = `
+                            <td>${spot.time}</td>
+                            <td><strong>${spot.operator}</strong></td>
+                            <td>CH ${spot.channel}</td>
+                            <td>FM</td>
+                            <td>${spot.location_from}</td>
+                            <td>${spot.location_to}</td>
+                            <td>${spot.distance_km} km</td>
+                            <td>${spot.comment}</td>
+                            <td><i class="fa-solid fa-signal"></i></td>
+                        `;
+                        tbody.insertBefore(newRow, tbody.firstChild);
+                        
+                        // Odtwórz dźwięk
+                        playNotificationSound();
+                        
+                        // Usuń animację po 2 sekundach
+                        setTimeout(() => {
+                            newRow.classList.remove('newSpot');
+                        }, 2000);
+                        
+                        lastSpotId = spot.id;
+                    }
+                });
+                
+                // Usuń stare spoty (zachowaj tylko 50)
+                const rows = tbody.querySelectorAll('tr');
+                if (rows.length > 50) {
+                    rows[rows.length - 1].remove();
+                }
+            }
+            isRefreshing = false;
+        })
+        .catch(error => {
+            console.error('Error loading spots:', error);
+            isRefreshing = false;
+        });
+}
+
+// Odtwórz dźwięk powiadomienia
+function playNotificationSound() {
+    const audio = document.getElementById('notificationSound');
+    audio.currentTime = 0;
+    audio.play().catch(() => {
+        // Dźwięk nie mógł być odtworzony (np. z powodu autoplay policy)
+    });
+}
+
 // Funkcja do ładowania statystyk
 function loadStats() {
     fetch('api/get_stats.php')
@@ -203,7 +263,6 @@ function loadStats() {
                 // Boczne statystyki
                 document.getElementById('statToday').textContent = data.month_spots;
                 document.getElementById('statOnline').textContent = data.online_operators;
-                document.getElementById('statCountries').textContent = data.active_locations;
 
                 // TOP Operatorzy
                 let onlineHtml = '';
@@ -219,6 +278,11 @@ function loadStats() {
         })
         .catch(error => console.error('Error loading stats:', error));
 }
+
+// Załaduj spoty na starcie
+loadSpots();
+// Odśwież spoty co 5 sekund
+setInterval(loadSpots, 5000);
 
 // Załaduj statystyki na starcie i co 10 sekund
 loadStats();
