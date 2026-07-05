@@ -38,13 +38,6 @@ if (session_status() === PHP_SESSION_NONE) {
                     </a>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="fa-solid fa-calendar-days"></i>
-                        Planowane
-                    </a>
-                </li>
-
                 <?php if (isset($_SESSION['operator'])): ?>
 
                     <li class="nav-item dropdown">
