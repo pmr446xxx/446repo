@@ -5,6 +5,68 @@ include 'includes/db.php';
 include 'includes/lang.php';
 
 /**
+ * AJAX endpoint for fetching spots only
+ */
+if (isset($_GET['ajax']) && $_GET['ajax'] === 'spots') {
+    header('Content-Type: text/html; charset=utf-8');
+    
+    $currentOperator = $_SESSION['operator'] ?? null;
+    $isAdmin = $currentOperator === 'admin';
+    
+    $stmt = $pdo->query("
+        SELECT id, operator, correspondent, channel, location_from, location_to, distance_km, comment, created_at
+        FROM spots
+        ORDER BY id DESC
+        LIMIT 50
+    ");
+
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $spotOperator = (string)$row['operator'];
+        $canEdit = $isAdmin || ($currentOperator && $currentOperator === $spotOperator);
+        
+        $now = new DateTime();
+        $created = new DateTime((string)$row['created_at']);
+        $diff = $now->diff($created);
+        
+        if ($diff->days > 0) {
+            $timeAgo = $diff->days . "d " . $diff->h . "h temu";
+        } elseif ($diff->h > 0) {
+            $timeAgo = $diff->h . "h " . $diff->i . "m temu";
+        } else {
+            $timeAgo = $diff->i . "m temu";
+        }
+        
+        echo '<tr data-spot-id="'.(int)$row['id'].'">
+            <td>'.date('H:i', strtotime((string)$row['created_at'])).'</td>
+            <td><strong>'.htmlspecialchars($spotOperator).'</strong></td>
+            <td>'.htmlspecialchars((string)$row['correspondent']).'</td>
+            <td>CH '.(int)$row['channel'].'</td>
+            <td>FM</td>
+            <td>'.htmlspecialchars((string)$row['location_from']).'</td>
+            <td>'.htmlspecialchars((string)$row['location_to']).'</td>
+            <td>'.(int)$row['distance_km'].' km</td>
+            <td>'.htmlspecialchars((string)$row['comment']).'</td>
+            <td>
+                <small class="text-secondary">'.$timeAgo.'</small>';
+        
+        if ($canEdit) {
+            echo ' <span class="spot-actions">
+                <a href="edit_spot.php?id='.(int)$row['id'].'" class="spot-action-btn spot-edit-btn" title="Edytuj">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </a>
+                <a href="delete_spot.php?id='.(int)$row['id'].'" class="spot-action-btn spot-delete-btn" title="Usuń" onclick="return confirm(\'Usunąć spot #'.(int)$row['id'].'?\');">
+                    <i class="fa-solid fa-trash"></i>
+                </a>
+            </span>';
+        }
+        
+        echo '</td>
+        </tr>';
+    }
+    exit;
+}
+
+/**
  * AJAX map endpoint in this same file:
  * /index.php?ajax=map
  * Map shows only last 12 hours of connectivity.
@@ -135,17 +197,6 @@ if (isset($_SESSION['operator'])) {
     $mySpots = $stmtMy->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function minutesAgoText(string $createdAt): string {
-    $now = new DateTime();
-    $created = new DateTime($createdAt);
-    $diffSec = max(0, $now->getTimestamp() - $created->getTimestamp());
-    $min = (int)floor($diffSec / 60);
-
-    if ($min <= 0) return t('just_now');
-    if ($min === 1) return t('min_ago_1');
-    return $min . ' ' . t('min_ago_x');
-}
-
 function formatTimeAgo(string $createdAt): string {
     $now = new DateTime();
     $created = new DateTime($createdAt);
@@ -250,6 +301,21 @@ function formatTimeAgo(string $createdAt): string {
 .spot-delete-btn:hover {
     background: #dc2626;
 }
+
+/* Row fade-in for new spots */
+@keyframes rowFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+tr.new-spot {
+    animation: rowFadeIn 0.5s ease-out;
+}
 </style>
 
 <div class="container-fluid mt-4">
@@ -285,51 +351,8 @@ function formatTimeAgo(string $createdAt): string {
                                     <th><?= t('added') ?></th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <?php
-                                $stmt = $pdo->query("
-                                    SELECT id, operator, correspondent, channel, location_from, location_to, distance_km, comment, created_at
-                                    FROM spots
-                                    ORDER BY id DESC
-                                    LIMIT 50
-                                ");
-
-                                $currentOperator = $_SESSION['operator'] ?? null;
-                                $isAdmin = $currentOperator === 'admin';
-
-                                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                                    $spotOperator = (string)$row['operator'];
-                                    $canEdit = $isAdmin || ($currentOperator && $currentOperator === $spotOperator);
-                                    $timeAgo = formatTimeAgo((string)$row['created_at']);
-                                    
-                                    echo '<tr>
-                                        <td>'.date('H:i', strtotime((string)$row['created_at'])).'</td>
-                                        <td><strong>'.htmlspecialchars($spotOperator).'</strong></td>
-                                        <td>'.htmlspecialchars((string)$row['correspondent']).'</td>
-                                        <td>CH '.(int)$row['channel'].'</td>
-                                        <td>FM</td>
-                                        <td>'.htmlspecialchars((string)$row['location_from']).'</td>
-                                        <td>'.htmlspecialchars((string)$row['location_to']).'</td>
-                                        <td>'.(int)$row['distance_km'].' km</td>
-                                        <td>'.htmlspecialchars((string)$row['comment']).'</td>
-                                        <td>
-                                            <small class="text-secondary">'.$timeAgo.'</small>';
-                                    
-                                    if ($canEdit) {
-                                        echo ' <span class="spot-actions">
-                                            <a href="edit_spot.php?id='.(int)$row['id'].'" class="spot-action-btn spot-edit-btn" title="Edytuj">
-                                                <i class="fa-solid fa-pen-to-square"></i>
-                                            </a>
-                                            <a href="delete_spot.php?id='.(int)$row['id'].'" class="spot-action-btn spot-delete-btn" title="Usuń" onclick="return confirm(\'Usunąć spot #'.(int)$row['id'].'?\');">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </a>
-                                        </span>';
-                                    }
-                                    
-                                    echo '</td>
-                                    </tr>';
-                                }
-                                ?>
+                            <tbody id="spotsTableBody">
+                                <!-- AJAX loaded -->
                             </tbody>
                         </table>
                     </div>
@@ -446,6 +469,8 @@ function formatTimeAgo(string $createdAt): string {
 <script>
 let timer = null;
 let autoRefreshOn = localStorage.getItem('autoRefreshOn') !== '0';
+let spotsRefreshTimer = null;
+let lastSpotIds = [];
 
 const TXT_ON  = <?= json_encode(t('auto_refresh_on')) ?>;
 const TXT_OFF = <?= json_encode(t('auto_refresh_off')) ?>;
@@ -464,7 +489,7 @@ function applyRefresh() {
 
     if (timer) clearInterval(timer);
     if (autoRefreshOn) {
-        timer = setInterval(() => window.location.reload(), 10000);
+        timer = setInterval(loadSpotsTable, 10000);
     }
 }
 
@@ -478,6 +503,33 @@ function loadStats() {
             document.getElementById('st_ops').textContent = d.operators_today;
             document.getElementById('st_ch').textContent = d.top_channel;
             document.getElementById('st_last').textContent = d.last_spot_ago;
+        })
+        .catch(() => {});
+}
+
+function loadSpotsTable() {
+    fetch('index.php?ajax=spots&_=' + Date.now(), { cache: 'no-store' })
+        .then(r => r.text())
+        .then(html => {
+            const tbody = document.getElementById('spotsTableBody');
+            if (!tbody) return;
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            const newRows = tempDiv.querySelectorAll('tr');
+            
+            // Get new spot IDs
+            const newIds = Array.from(newRows).map(row => row.getAttribute('data-spot-id'));
+            
+            // Mark new rows
+            newRows.forEach(row => {
+                if (!lastSpotIds.includes(row.getAttribute('data-spot-id'))) {
+                    row.classList.add('new-spot');
+                }
+            });
+            
+            tbody.innerHTML = html;
+            lastSpotIds = newIds;
         })
         .catch(() => {});
 }
@@ -694,6 +746,8 @@ async function loadMapData() {
 
 loadStats();
 applyRefresh();
+loadSpotsTable();
+setInterval(loadSpotsTable, 10000);
 
 document.addEventListener('DOMContentLoaded', async () => {
     initMap();
