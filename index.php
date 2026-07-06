@@ -214,43 +214,6 @@ function formatTimeAgo(string $createdAt): string {
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-/* WORLD MAP BACKGROUND BANNER */
-.world-map-banner {
-    width: 100%;
-    height: 180px;
-    background: #0a0e27;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-bottom: 2px solid rgba(255, 0, 0, 0.2);
-}
-
-.banner-text {
-    position: relative;
-    z-index: 10;
-    text-align: center;
-}
-
-.domain-text {
-    font-size: 52px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    color: #ff0000;
-    margin: 0;
-    padding: 0;
-}
-
-/* WORLD MAP LINES - SVG Background */
-svg.world-map-svg {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    opacity: 0.25;
-}
-
 #plMap { height: 440px; border-radius: 10px; overflow: hidden; }
 .map-note { font-size:12px; color:#9ca3af; margin-top:8px; }
 .line-label { pointer-events: none; }
@@ -358,38 +321,6 @@ tr.new-spot {
     animation: rowFadeIn 0.5s ease-out;
 }
 </style>
-
-<!-- WORLD MAP BANNER WITH 446DX.pl -->
-<div class="world-map-banner">
-    <svg class="world-map-svg" viewBox="0 0 1000 200">
-        <!-- Simplified world map lines with country connections -->
-        <line x1="50" y1="100" x2="200" y2="80" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
-        <line x1="200" y1="80" x2="350" y2="90" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
-        <line x1="350" y1="90" x2="450" y2="70" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
-        <line x1="450" y1="70" x2="600" y2="100" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
-        <line x1="600" y1="100" x2="750" y2="80" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
-        <line x1="750" y1="80" x2="900" y2="110" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
-        
-        <!-- Vertical connections -->
-        <line x1="150" y1="60" x2="150" y2="140" stroke="rgba(255,0,0,0.3)" stroke-width="1"/>
-        <line x1="350" y1="50" x2="350" y2="130" stroke="rgba(255,0,0,0.3)" stroke-width="1"/>
-        <line x1="550" y1="40" x2="550" y2="150" stroke="rgba(255,0,0,0.3)" stroke-width="1"/>
-        <line x1="750" y1="60" x2="750" y2="140" stroke="rgba(255,0,0,0.3)" stroke-width="1"/>
-        
-        <!-- Connection dots -->
-        <circle cx="50" cy="100" r="3" fill="rgba(255,0,0,0.4)"/>
-        <circle cx="200" cy="80" r="3" fill="rgba(255,0,0,0.4)"/>
-        <circle cx="350" cy="90" r="3" fill="rgba(255,0,0,0.4)"/>
-        <circle cx="450" cy="70" r="3" fill="rgba(255,0,0,0.4)"/>
-        <circle cx="600" cy="100" r="3" fill="rgba(255,0,0,0.4)"/>
-        <circle cx="750" cy="80" r="3" fill="rgba(255,0,0,0.4)"/>
-        <circle cx="900" cy="110" r="3" fill="rgba(255,0,0,0.4)"/>
-    </svg>
-    
-    <div class="banner-text">
-        <h1 class="domain-text">446DX.pl</h1>
-    </div>
-</div>
 
 <div class="container-fluid mt-4">
     <div class="row g-3">
@@ -708,31 +639,63 @@ function startBannerLoop(items) {
     }, 5000);
 }
 
-// ===== AUTO ZOOM - HAVERSINE FORMULA =====
-function calculateMaxDistance(items) {
-    if (!items || items.length === 0) return 0;
-    
-    let maxDist = 0;
+// ===== AUTO ZOOM - OBLICZ BOUNDS I ZOOM BEZPOSREDNIO =====
+function calculateBoundsAndZoom(items) {
+    if (!items || items.length === 0) {
+        return { bounds: null, zoom: 6 };
+    }
+
+    const allLats = [];
+    const allLngs = [];
+
     items.forEach(item => {
-        const lat1 = item.from.lat;
-        const lng1 = item.from.lng;
-        const lat2 = item.to.lat;
-        const lng2 = item.to.lng;
-        
-        // Haversine formula - dokładny dystans w km
-        const R = 6371; // Promień Ziemi w km
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLng = (lng2 - lng1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                  Math.sin(dLng/2) * Math.sin(dLng/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        const dist = R * c;
-        
-        if (dist > maxDist) maxDist = dist;
+        allLats.push(item.from.lat, item.to.lat);
+        allLngs.push(item.from.lng, item.to.lng);
     });
-    
-    return maxDist;
+
+    if (allLats.length === 0) {
+        return { bounds: null, zoom: 6 };
+    }
+
+    const minLat = Math.min(...allLats);
+    const maxLat = Math.max(...allLats);
+    const minLng = Math.min(...allLngs);
+    const maxLng = Math.max(...allLngs);
+
+    const latDiff = maxLat - minLat;
+    const lngDiff = maxLng - minLng;
+    const maxDiff = Math.max(latDiff, lngDiff);
+
+    console.log('Bounds - Lat:', minLat, 'to', maxLat, 'Lng:', minLng, 'to', maxLng);
+    console.log('Lat diff:', latDiff, 'Lng diff:', lngDiff, 'Max diff:', maxDiff);
+
+    // Oblicz zoom na podstawie rozmiaru bounds
+    let zoom = 6;
+    if (maxDiff < 0.5) {
+        zoom = 13; // Bardzo mały obszar
+    } else if (maxDiff < 1) {
+        zoom = 12; // Mały obszar < 140km
+    } else if (maxDiff < 1.5) {
+        zoom = 11;
+    } else if (maxDiff < 2) {
+        zoom = 10;
+    } else if (maxDiff < 3) {
+        zoom = 9;
+    } else if (maxDiff < 4) {
+        zoom = 8;
+    } else if (maxDiff < 6) {
+        zoom = 7;
+    }
+
+    console.log('Calculated zoom:', zoom);
+
+    const bounds = L.latLngBounds(
+        [minLat, minLng],
+        [maxLat, maxLng]
+    );
+    const center = bounds.getCenter();
+
+    return { bounds, center, zoom };
 }
 
 async function loadMapData() {
@@ -745,7 +708,6 @@ async function loadMapData() {
         if (!data.success || !Array.isArray(data.items)) return;
 
         const items = data.items.slice(0, 30);
-        const allBounds = [];
         let lineCount = 0;
 
         items.forEach((s, i) => {
@@ -819,39 +781,18 @@ async function loadMapData() {
                 `CH ${Number(s.channel)} | ${Number(s.distance_km)} km | ${escapeHtml(s.operator)}`
             );
 
-            allBounds.push(from, to);
             lineCount++;
         });
 
         startBannerLoop(items);
 
-        // ===== FIXED AUTO ZOOM =====
+        // ===== AUTO ZOOM - USTAWIENIE MAPY =====
         if (!mapZoomSet && lineCount > 0) {
-            const maxDistance = calculateMaxDistance(items);
+            const { bounds, center, zoom } = calculateBoundsAndZoom(items);
             
-            // Centrum mapy
-            const allLats = [];
-            const allLngs = [];
-            items.forEach(item => {
-                allLats.push(item.from.lat, item.to.lat);
-                allLngs.push(item.from.lng, item.to.lng);
-            });
-            const centerLat = (Math.min(...allLats) + Math.max(...allLats)) / 2;
-            const centerLng = (Math.min(...allLngs) + Math.max(...allLngs)) / 2;
-            
-            // AUTO ZOOM NA PODSTAWIE DYSTANSU
-            let zoomLevel = 6; // default - Polska
-            if (maxDistance < 140) {
-                zoomLevel = 12; // Przybliż dla małych odległości (< 140km)
-            } else if (maxDistance < 300) {
-                zoomLevel = 10;
-            } else if (maxDistance < 500) {
-                zoomLevel = 8;
-            }
-            
-            // Ustaw widok RAZ - bez zmiany
-            plMap.setView([centerLat, centerLng], zoomLevel);
-            mapZoomSet = true; // Flaga - już ustawione!
+            console.log('Ustawianie mapy - Center:', center, 'Zoom:', zoom);
+            plMap.setView(center, zoom);
+            mapZoomSet = true;
         }
 
     } catch (e) {
