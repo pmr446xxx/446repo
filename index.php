@@ -4,9 +4,6 @@ declare(strict_types=1);
 include 'includes/db.php';
 include 'includes/lang.php';
 
-/**
- * AJAX endpoint for fetching spots only
- */
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'spots') {
     header('Content-Type: text/html; charset=utf-8');
     
@@ -66,11 +63,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'spots') {
     exit;
 }
 
-/**
- * AJAX map endpoint in this same file:
- * /index.php?ajax=map
- * Map shows only last 12 hours of connectivity.
- */
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'map') {
     header('Content-Type: application/json; charset=utf-8');
 
@@ -83,7 +75,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'map') {
     }
 
     try {
-        // ONLY last 12 hours for map lines
         $rows = $pdo->query("
             SELECT id, operator, channel, location_from, location_to, distance_km, created_at
             FROM spots
@@ -218,7 +209,6 @@ function formatTimeAgo(string $createdAt): string {
 .map-note { font-size:12px; color:#9ca3af; margin-top:8px; }
 .line-label { pointer-events: none; }
 
-/* animated top banner on map */
 .map-floating-banner {
     pointer-events: none;
     position: absolute;
@@ -253,7 +243,6 @@ function formatTimeAgo(string $createdAt): string {
 .banner-km { color: #fff; font-size: 1.05em; margin-left: 10px; }
 .banner-dot { color: #f87171; margin: 0 8px; }
 
-/* Spot actions animation - VERTICAL STACK, SMALL, TRANSPARENT */
 .spot-actions {
     display: inline-flex;
     flex-direction: column;
@@ -263,14 +252,8 @@ function formatTimeAgo(string $createdAt): string {
     margin-left: 6px;
 }
 @keyframes fadeInScale {
-    0% {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
 }
 .spot-action-btn {
     padding: 2px 4px;
@@ -291,35 +274,16 @@ function formatTimeAgo(string $createdAt): string {
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
-.spot-edit-btn {
-    background: rgba(59, 130, 246, 0.5);
-    color: white;
-}
-.spot-edit-btn:hover {
-    background: rgba(37, 99, 235, 0.8);
-}
-.spot-delete-btn {
-    background: rgba(239, 68, 68, 0.5);
-    color: white;
-}
-.spot-delete-btn:hover {
-    background: rgba(220, 38, 38, 0.8);
-}
+.spot-edit-btn { background: rgba(59, 130, 246, 0.5); color: white; }
+.spot-edit-btn:hover { background: rgba(37, 99, 235, 0.8); }
+.spot-delete-btn { background: rgba(239, 68, 68, 0.5); color: white; }
+.spot-delete-btn:hover { background: rgba(220, 38, 38, 0.8); }
 
-/* Row fade-in for new spots */
 @keyframes rowFadeIn {
-    0% {
-        opacity: 0;
-        transform: translateX(-10px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    0% { opacity: 0; transform: translateX(-10px); }
+    100% { opacity: 1; transform: translateX(0); }
 }
-tr.new-spot {
-    animation: rowFadeIn 0.5s ease-out;
-}
+tr.new-spot { animation: rowFadeIn 0.5s ease-out; }
 </style>
 
 <div class="container-fluid mt-4">
@@ -473,7 +437,6 @@ tr.new-spot {
 <script>
 let timer = null;
 let autoRefreshOn = localStorage.getItem('autoRefreshOn') !== '0';
-let spotsRefreshTimer = null;
 let lastSpotIds = [];
 
 const TXT_ON  = <?= json_encode(t('auto_refresh_on')) ?>;
@@ -490,7 +453,6 @@ function setRefreshButton() {
 function applyRefresh() {
     localStorage.setItem('autoRefreshOn', autoRefreshOn ? '1' : '0');
     setRefreshButton();
-
     if (timer) clearInterval(timer);
     if (autoRefreshOn) {
         timer = setInterval(loadSpotsTable, 10000);
@@ -522,10 +484,8 @@ function loadSpotsTable() {
             tempDiv.innerHTML = html;
             const newRows = tempDiv.querySelectorAll('tr');
             
-            // Get new spot IDs
             const newIds = Array.from(newRows).map(row => row.getAttribute('data-spot-id'));
             
-            // Mark new rows
             newRows.forEach(row => {
                 if (!lastSpotIds.includes(row.getAttribute('data-spot-id'))) {
                     row.classList.add('new-spot');
@@ -543,11 +503,12 @@ document.getElementById('autoRefreshBtn')?.addEventListener('click', () => {
     applyRefresh();
 });
 
-// ---- MAPA ----
+// ---- MAPA - DYNAMICZNY ZOOM ----
 let plMap = null;
 let mapLayer = null;
 let lastNewestSpotId = null;
-let zoomInTimer = null;
+let mapCycleTimer = null;
+let mapZoomState = 'zoomed_out'; // zoomed_out, zoomed_in, waiting
 
 function initMap() {
     plMap = L.map('plMap').setView([52.1, 19.4], 6);
@@ -555,7 +516,6 @@ function initMap() {
         maxZoom: 18,
         attribution: '&copy; OpenStreetMap'
     }).addTo(plMap);
-
     mapLayer = L.layerGroup().addTo(plMap);
 }
 
@@ -574,12 +534,49 @@ function spacedKm(n) {
 }
 
 function calculateZoomLevel(distance_km) {
-    if (distance_km < 15) return 13;
-    if (distance_km < 30) return 12;
-    if (distance_km < 50) return 11;
-    if (distance_km < 100) return 10;
-    if (distance_km < 200) return 9;
-    return 8;
+    if (distance_km < 15) return 14;
+    if (distance_km < 30) return 13;
+    if (distance_km < 50) return 12;
+    if (distance_km < 100) return 11;
+    if (distance_km < 200) return 10;
+    return 9;
+}
+
+// Cykl: zbliż (30s) -> oddal (5s) -> powtórz aż do nowego spotu
+function startMapCycle(spotItem) {
+    if (!plMap || !spotItem) return;
+
+    if (mapCycleTimer) clearTimeout(mapCycleTimer);
+
+    const fromLat = Number(spotItem.from.lat);
+    const fromLng = Number(spotItem.from.lng);
+    const toLat = Number(spotItem.to.lat);
+    const toLng = Number(spotItem.to.lng);
+
+    const centerLat = (fromLat + toLat) / 2;
+    const centerLng = (fromLng + toLng) / 2;
+    const zoom = calculateZoomLevel(spotItem.distance_km);
+
+    // ZBLIŻ
+    console.log('ZBLIŻ do:', centerLat, centerLng, 'Zoom:', zoom);
+    plMap.setView([centerLat, centerLng], zoom, { animate: true, duration: 1.5 });
+    mapZoomState = 'zoomed_in';
+
+    // Po 30s - ODDAL O 3 POZIOMY
+    mapCycleTimer = setTimeout(() => {
+        const currentZoom = plMap.getZoom();
+        const outZoom = Math.max(6, currentZoom - 3);
+        console.log('ODDAL z zoom', currentZoom, 'na', outZoom);
+        plMap.setView([centerLat, centerLng], outZoom, { animate: true, duration: 1.5 });
+        mapZoomState = 'zoomed_out';
+
+        // Po 5s - ZBLIŻ ZNOWU (jeśli ten sam spot)
+        mapCycleTimer = setTimeout(() => {
+            if (lastNewestSpotId === spotItem.id) {
+                startMapCycle(spotItem);
+            }
+        }, 5000);
+    }, 30000);
 }
 
 async function loadMapData() {
@@ -592,9 +589,7 @@ async function loadMapData() {
         if (!data.success || !Array.isArray(data.items)) return;
 
         const items = data.items.slice(0, 30);
-        let lineCount = 0;
 
-        // Rysuj wszystkie linie
         items.forEach((s, i) => {
             const from = [Number(s.from.lat), Number(s.from.lng)];
             const to   = [Number(s.to.lat), Number(s.to.lng)];
@@ -603,21 +598,26 @@ async function loadMapData() {
             const isNewest = (i === 0);
             const ageFactor = Math.min(i / 10, 1);
 
+            // MARKERY - WIĘKSZE
             L.circleMarker(from, {
-                radius: isNewest ? 8 : 5,
+                radius: isNewest ? 15 : 8,
                 color: '#22c55e',
                 fillColor: '#22c55e',
                 fillOpacity: isNewest ? 1 : (0.85 - ageFactor * 0.35),
-                weight: isNewest ? 3 : 1
-            }).addTo(mapLayer).bindTooltip(escapeHtml(s.from.city));
+                weight: isNewest ? 4 : 2
+            }).addTo(mapLayer)
+              .bindTooltip(escapeHtml(s.from.city), { permanent: isNewest, direction: 'top', offset: [0, -20] })
+              .bindPopup(escapeHtml(s.from.city));
 
             L.circleMarker(to, {
-                radius: isNewest ? 8 : 5,
+                radius: isNewest ? 15 : 8,
                 color: '#3b82f6',
                 fillColor: '#3b82f6',
                 fillOpacity: isNewest ? 1 : (0.85 - ageFactor * 0.35),
-                weight: isNewest ? 3 : 1
-            }).addTo(mapLayer).bindTooltip(escapeHtml(s.to.city));
+                weight: isNewest ? 4 : 2
+            }).addTo(mapLayer)
+              .bindTooltip(escapeHtml(s.to.city), { permanent: isNewest, direction: 'top', offset: [0, -20] })
+              .bindPopup(escapeHtml(s.to.city));
 
             const line = L.polyline([from, to], {
                 color: isNewest ? '#ff1e1e' : '#ff6b6b',
@@ -644,14 +644,14 @@ async function loadMapData() {
                 html: `<div style="
                     color:#ffffff;
                     font-weight:900;
-                    font-size:${isNewest ? '18px' : '16px'};
+                    font-size:${isNewest ? '20px' : '16px'};
                     letter-spacing:2px;
                     text-shadow:
                         -1px -1px 0 #000,
                          1px -1px 0 #000,
                         -1px  1px 0 #000,
                          1px  1px 0 #000,
-                         0 0 8px rgba(0,0,0,0.9);
+                         0 0 10px rgba(0,0,0,0.9);
                     white-space:nowrap;
                     transform: translate(-50%, -50%);
                 ">${kmText}</div>`,
@@ -665,39 +665,16 @@ async function loadMapData() {
                 `${escapeHtml(s.from.city)} → ${escapeHtml(s.to.city)}<br>` +
                 `CH ${Number(s.channel)} | ${Number(s.distance_km)} km | ${escapeHtml(s.operator)}`
             );
-
-            lineCount++;
         });
 
-        // ===== DYNAMICZNY ZOOM =====
+        // NOWY SPOT - START CYKLU
         if (items.length > 0) {
             const newestSpot = items[0];
-            const isNewSpot = lastNewestSpotId !== newestSpot.id;
             
-            if (isNewSpot) {
-                console.log('Nowy spot! ID:', newestSpot.id, 'Dystans:', newestSpot.distance_km, 'km');
+            if (lastNewestSpotId !== newestSpot.id) {
+                console.log('NOWY SPOT! ID:', newestSpot.id);
                 lastNewestSpotId = newestSpot.id;
-
-                if (zoomInTimer) clearTimeout(zoomInTimer);
-
-                // ZBLIŻ NA 30 SEKUND
-                const fromLat = Number(newestSpot.from.lat);
-                const fromLng = Number(newestSpot.from.lng);
-                const toLat = Number(newestSpot.to.lat);
-                const toLng = Number(newestSpot.to.lng);
-
-                const centerLat = (fromLat + toLat) / 2;
-                const centerLng = (fromLng + toLng) / 2;
-                const zoom = calculateZoomLevel(newestSpot.distance_km);
-
-                console.log('Zbliżam do:', centerLat, centerLng, 'Zoom:', zoom);
-                plMap.setView([centerLat, centerLng], zoom, { animate: true, duration: 1.5 });
-
-                // PO 30 SEKUNDACH - ODDAL DO CAŁEJ MAPY
-                zoomInTimer = setTimeout(() => {
-                    console.log('Oddalam mapę');
-                    plMap.setView([52.1, 19.4], 6, { animate: true, duration: 1.5 });
-                }, 30000);
+                startMapCycle(newestSpot);
             }
         }
 
