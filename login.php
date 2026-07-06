@@ -29,17 +29,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (count($errors) == 0) {
 
-        // TU zaczynamy logikę sprawdzania użytkownika (2/5)
+        // Sprawdzenie użytkownika w tabeli operators
         $stmt = $pdo->prepare("
             SELECT *
-            FROM users
+            FROM operators
             WHERE operator = ?
-            OR email = ?
             LIMIT 1
         ");
 
         $stmt->execute([
-            $login,
             $login
         ]);
 
@@ -53,11 +51,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if (password_verify($password, $user["password"])) {
 
-                $_SESSION["user_id"] = $user["id"];
                 $_SESSION["operator"] = $user["operator"];
-                $_SESSION["role"] = $user["role"];
-$_SESSION["operator"] = $user["operator"] ?? $user["email"];
-                header("Location: index.php");
+                
+                // Jeśli to admin, przejdź do panelu admin
+                if ($user["operator"] === "admin") {
+                    header("Location: admin.php");
+                } else {
+                    header("Location: index.php");
+                }
                 exit;
 
             } else {
@@ -112,7 +113,7 @@ if (count($errors) > 0) {
 
 <label class="form-label">
 
-Nazwa operatora lub e-mail
+Nazwa operatora
 
 </label>
 
@@ -140,24 +141,6 @@ name="password"
 class="form-control"
 required
 autocomplete="current-password">
-
-</div>
-
-<div class="form-check mb-4">
-
-<input
-class="form-check-input"
-type="checkbox"
-name="remember"
-id="remember">
-
-<label
-class="form-check-label"
-for="remember">
-
-Zapamiętaj mnie
-
-</label>
 
 </div>
 
