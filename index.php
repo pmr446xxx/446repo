@@ -253,12 +253,14 @@ function formatTimeAgo(string $createdAt): string {
 .banner-km { color: #fff; font-size: 1.05em; margin-left: 10px; }
 .banner-dot { color: #f87171; margin: 0 8px; }
 
-/* Spot actions animation */
+/* Spot actions animation - VERTICAL STACK, SMALL, TRANSPARENT */
 .spot-actions {
     display: inline-flex;
-    gap: 6px;
+    flex-direction: column;
+    gap: 3px;
     align-items: center;
     animation: fadeInScale 0.5s ease-out;
+    margin-left: 6px;
 }
 @keyframes fadeInScale {
     0% {
@@ -271,35 +273,37 @@ function formatTimeAgo(string $createdAt): string {
     }
 }
 .spot-action-btn {
-    padding: 4px 8px;
-    font-size: 12px;
+    padding: 2px 4px;
+    font-size: 10px;
     border: none;
-    border-radius: 4px;
+    border-radius: 3px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 28px;
-    height: 28px;
+    min-width: 20px;
+    height: 20px;
+    opacity: 0.6;
 }
 .spot-action-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 .spot-edit-btn {
-    background: #3b82f6;
+    background: rgba(59, 130, 246, 0.5);
     color: white;
 }
 .spot-edit-btn:hover {
-    background: #2563eb;
+    background: rgba(37, 99, 235, 0.8);
 }
 .spot-delete-btn {
-    background: #ef4444;
+    background: rgba(239, 68, 68, 0.5);
     color: white;
 }
 .spot-delete-btn:hover {
-    background: #dc2626;
+    background: rgba(220, 38, 38, 0.8);
 }
 
 /* Row fade-in for new spots */
