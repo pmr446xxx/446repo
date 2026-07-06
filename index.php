@@ -201,6 +201,55 @@ function formatTimeAgo(string $createdAt): string {
 .banner-arrow { color: #fca5a5; margin: 0 8px; }
 .banner-km { color: #fff; font-size: 1.05em; margin-left: 10px; }
 .banner-dot { color: #f87171; margin: 0 8px; }
+
+/* Spot actions animation */
+.spot-actions {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    animation: fadeInScale 0.5s ease-out;
+}
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+.spot-action-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+}
+.spot-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+.spot-edit-btn {
+    background: #3b82f6;
+    color: white;
+}
+.spot-edit-btn:hover {
+    background: #2563eb;
+}
+.spot-delete-btn {
+    background: #ef4444;
+    color: white;
+}
+.spot-delete-btn:hover {
+    background: #dc2626;
+}
 </style>
 
 <div class="container-fluid mt-4">
@@ -245,10 +294,17 @@ function formatTimeAgo(string $createdAt): string {
                                     LIMIT 50
                                 ");
 
+                                $currentOperator = $_SESSION['operator'] ?? null;
+                                $isAdmin = $currentOperator === 'admin';
+
                                 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                    $spotOperator = (string)$row['operator'];
+                                    $canEdit = $isAdmin || ($currentOperator && $currentOperator === $spotOperator);
+                                    $timeAgo = formatTimeAgo((string)$row['created_at']);
+                                    
                                     echo '<tr>
                                         <td>'.date('H:i', strtotime((string)$row['created_at'])).'</td>
-                                        <td><strong>'.htmlspecialchars((string)$row['operator']).'</strong></td>
+                                        <td><strong>'.htmlspecialchars($spotOperator).'</strong></td>
                                         <td>'.htmlspecialchars((string)$row['correspondent']).'</td>
                                         <td>CH '.(int)$row['channel'].'</td>
                                         <td>FM</td>
@@ -256,7 +312,21 @@ function formatTimeAgo(string $createdAt): string {
                                         <td>'.htmlspecialchars((string)$row['location_to']).'</td>
                                         <td>'.(int)$row['distance_km'].' km</td>
                                         <td>'.htmlspecialchars((string)$row['comment']).'</td>
-                                        <td><small class="text-secondary">'.formatTimeAgo((string)$row['created_at']).'</small></td>
+                                        <td>
+                                            <small class="text-secondary">'.$timeAgo.'</small>';
+                                    
+                                    if ($canEdit) {
+                                        echo ' <span class="spot-actions">
+                                            <a href="edit_spot.php?id='.(int)$row['id'].'" class="spot-action-btn spot-edit-btn" title="Edytuj">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </a>
+                                            <a href="delete_spot.php?id='.(int)$row['id'].'" class="spot-action-btn spot-delete-btn" title="Usuń" onclick="return confirm(\'Usunąć spot #'.(int)$row['id'].'?\');">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </a>
+                                        </span>';
+                                    }
+                                    
+                                    echo '</td>
                                     </tr>';
                                 }
                                 ?>
@@ -317,7 +387,7 @@ function formatTimeAgo(string $createdAt): string {
                     <a href="profile.php" class="btn btn-warning w-100 mb-2">
                         <i class="fa-solid fa-id-card"></i> <?= t('my_profile') ?>
                     </a>
-                    <?php if (isset($_SESSION['operator']) && $_SESSION['operator'] === 'ADMIN'): ?>
+                    <?php if (isset($_SESSION['operator']) && $_SESSION['operator'] === 'admin'): ?>
                         <a href="admin.php" class="btn btn-danger w-100">
                             <i class="fa-solid fa-shield"></i> Panel Admina
                         </a>
@@ -354,7 +424,7 @@ function formatTimeAgo(string $createdAt): string {
                                         <a class="btn btn-primary btn-sm" href="edit_spot.php?id=<?= (int)$s['id'] ?>">
                                             <i class="fa-solid fa-pen-to-square"></i>
                                         </a>
-                                        <a class="btn btn-danger btn-sm" href="delete_spot.php?id=<?= (int)$s['id'] ?>" onclick="return confirm('<?= t('delete_confirm') ?><?= (int)$s['id'] ?>?');">
+                                        <a class="btn btn-danger btn-sm" href="delete_spot.php?id=<?= (int)$s['id'] ?>" onclick="return confirm('Usunąć spot #<?= (int)$s['id'] ?>?');">
                                             <i class="fa-solid fa-trash"></i>
                                         </a>
                                     </div>
