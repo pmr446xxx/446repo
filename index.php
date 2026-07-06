@@ -639,7 +639,7 @@ function startBannerLoop(items) {
     }, 5000);
 }
 
-// Oblicz maksymalny dystans między wszystkimi miastami
+// ===== AUTO ZOOM - HAVERSINE FORMULA =====
 function calculateMaxDistance(items) {
     if (!items || items.length === 0) return 0;
     
@@ -650,8 +650,8 @@ function calculateMaxDistance(items) {
         const lat2 = item.to.lat;
         const lng2 = item.to.lng;
         
-        // Haversine formula
-        const R = 6371; // km
+        // Haversine formula - dokładny dystans w km
+        const R = 6371; // Promień Ziemi w km
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLng = (lng2 - lng1) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -663,6 +663,7 @@ function calculateMaxDistance(items) {
         if (dist > maxDist) maxDist = dist;
     });
     
+    console.log('Max distance calculated:', maxDist, 'km');
     return maxDist;
 }
 
@@ -756,7 +757,7 @@ async function loadMapData() {
 
         startBannerLoop(items);
 
-        // FIXED ZOOM - ustal RAZ i nie zmieniaj
+        // ===== FIXED AUTO ZOOM =====
         if (!mapZoomSet && lineCount > 0) {
             const maxDistance = calculateMaxDistance(items);
             
@@ -770,19 +771,21 @@ async function loadMapData() {
             const centerLat = (Math.min(...allLats) + Math.max(...allLats)) / 2;
             const centerLng = (Math.min(...allLngs) + Math.max(...allLngs)) / 2;
             
-            // Ustal zoom na podstawie dystansu
+            // AUTO ZOOM NA PODSTAWIE DYSTANSU
             let zoomLevel = 6; // default - Polska
             if (maxDistance < 140) {
-                zoomLevel = 12; // Przybliż dla małych odległości
+                zoomLevel = 12; // Przybliż dla małych odległości (< 140km)
             } else if (maxDistance < 300) {
                 zoomLevel = 10;
             } else if (maxDistance < 500) {
                 zoomLevel = 8;
             }
             
+            console.log('Setting map view - center:', centerLat, centerLng, 'zoom:', zoomLevel, 'distance:', maxDistance);
+            
             // Ustaw widok RAZ - bez zmiany
             plMap.setView([centerLat, centerLng], zoomLevel);
-            mapZoomSet = true;
+            mapZoomSet = true; // Flaga - już ustawione!
         }
 
     } catch (e) {
