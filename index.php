@@ -80,7 +80,7 @@ include 'includes/navbar.php';
                                 <th>Do</th>
                                 <th>KM</th>
                                 <th>Komentarz</th>
-                                <th>Czas</th>
+                                <th>Dodany</th>
                             </tr>
                         </thead>
 
@@ -97,6 +97,18 @@ include 'includes/navbar.php';
 
                             while($row = $stmt->fetch(PDO::FETCH_ASSOC))
                             {
+                                // Format czasu
+                                $now = new DateTime();
+                                $created = new DateTime($row["created_at"]);
+                                $diff = $now->diff($created);
+                                
+                                if ($diff->days > 0) {
+                                    $timeAgo = $diff->days . "d " . $diff->h . "h temu";
+                                } elseif ($diff->h > 0) {
+                                    $timeAgo = $diff->h . "h " . $diff->i . "m temu";
+                                } else {
+                                    $timeAgo = $diff->i . "m temu";
+                                }
 
                                 echo '
                                     <tr data-id="'.$row["id"].'">
@@ -108,7 +120,7 @@ include 'includes/navbar.php';
                                         <td>'.$row["location_to"].'</td>
                                         <td>'.$row["distance_km"].' km</td>
                                         <td>'.$row["comment"].'</td>
-                                        <td><i class="fa-solid fa-signal"></i></td>
+                                        <td><small class="text-secondary">'.$timeAgo.'</small></td>
                                     </tr>
                                 ';
 
@@ -209,7 +221,7 @@ function loadSpots() {
                             <td>${spot.location_to}</td>
                             <td>${spot.distance_km} km</td>
                             <td>${spot.comment}</td>
-                            <td><i class="fa-solid fa-signal"></i></td>
+                            <td><small class="text-secondary">${spot.time_ago}</small></td>
                         `;
                         tbody.insertBefore(newRow, tbody.firstChild);
                         
