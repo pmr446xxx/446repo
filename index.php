@@ -214,6 +214,149 @@ function formatTimeAgo(string $createdAt): string {
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
+/* NEON BANNER - 446 PMR CLUSTER */
+.neon-banner {
+    width: 100%;
+    background: #0a0e27;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(255, 0, 0, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 200, 0, 0.05) 0%, transparent 50%);
+    padding: 40px 20px;
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 3px solid rgba(255, 0, 0, 0.5);
+}
+
+.neon-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 0, 0, 0.03) 2px, rgba(255, 0, 0, 0.03) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 0, 0, 0.03) 2px, rgba(255, 0, 0, 0.03) 4px);
+    pointer-events: none;
+}
+
+.neon-content {
+    position: relative;
+    z-index: 1;
+}
+
+.neon-title {
+    font-size: 72px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    margin: 0;
+    line-height: 1;
+    text-shadow: 
+        0 0 10px #ff0000,
+        0 0 20px #ff0000,
+        0 0 30px #ff0000,
+        0 0 40px #ff2222,
+        0 0 70px #ff0000,
+        0 0 80px #ff0000,
+        0 0 100px #ff0000;
+    animation: neonGlow 1.5s ease-in-out infinite;
+}
+
+.neon-title .red {
+    color: #ff0000;
+}
+
+.neon-title .yellow {
+    color: #ffff00;
+    text-shadow: 
+        0 0 10px #ffff00,
+        0 0 20px #ffff00,
+        0 0 30px #ffff00,
+        0 0 40px #ffff00,
+        0 0 70px #ffff00,
+        0 0 80px #ffff00,
+        0 0 100px #ffff00;
+}
+
+.neon-subtitle {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-top: 15px;
+    color: #ff0000;
+    text-shadow: 
+        0 0 10px #ff0000,
+        0 0 20px #ff0000,
+        0 0 30px #ff0000,
+        0 0 40px #ff2222;
+    animation: neonGlow 1.5s ease-in-out infinite;
+}
+
+.neon-domain {
+    font-size: 36px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    margin-top: 15px;
+    color: #ffff00;
+    text-shadow: 
+        0 0 10px #ffff00,
+        0 0 20px #ffff00,
+        0 0 30px #ffff00,
+        0 0 40px #ffff00,
+        0 0 70px #ffff00,
+        0 0 80px #ffff00,
+        0 0 100px #ffff00;
+    animation: neonGlowYellow 1.5s ease-in-out infinite;
+}
+
+@keyframes neonGlow {
+    0%, 100% {
+        text-shadow: 
+            0 0 10px #ff0000,
+            0 0 20px #ff0000,
+            0 0 30px #ff0000,
+            0 0 40px #ff2222,
+            0 0 70px #ff0000,
+            0 0 80px #ff0000,
+            0 0 100px #ff0000;
+    }
+    50% {
+        text-shadow: 
+            0 0 5px #ff0000,
+            0 0 10px #ff0000,
+            0 0 20px #ff0000,
+            0 0 30px #ff1111,
+            0 0 40px #ff0000,
+            0 0 50px #ff0000,
+            0 0 60px #ff0000;
+    }
+}
+
+@keyframes neonGlowYellow {
+    0%, 100% {
+        text-shadow: 
+            0 0 10px #ffff00,
+            0 0 20px #ffff00,
+            0 0 30px #ffff00,
+            0 0 40px #ffff00,
+            0 0 70px #ffff00,
+            0 0 80px #ffff00,
+            0 0 100px #ffff00;
+    }
+    50% {
+        text-shadow: 
+            0 0 5px #ffff00,
+            0 0 10px #ffff00,
+            0 0 20px #ffff00,
+            0 0 30px #ffff00,
+            0 0 40px #ffff00,
+            0 0 50px #ffff00,
+            0 0 60px #ffff00;
+    }
+}
+
 #plMap { height: 440px; border-radius: 10px; overflow: hidden; }
 .map-note { font-size:12px; color:#9ca3af; margin-top:8px; }
 .line-label { pointer-events: none; }
@@ -321,6 +464,17 @@ tr.new-spot {
     animation: rowFadeIn 0.5s ease-out;
 }
 </style>
+
+<!-- NEON BANNER -->
+<div class="neon-banner">
+    <div class="neon-content">
+        <h1 class="neon-title">
+            <span class="red">446</span> <span class="red">PMR</span> <span class="red">CLUSTER</span>
+        </h1>
+        <div class="neon-subtitle">PMR DX CLUSTER</div>
+        <div class="neon-domain">446DX.pl</div>
+    </div>
+</div>
 
 <div class="container-fluid mt-4">
     <div class="row g-3">
