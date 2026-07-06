@@ -475,6 +475,7 @@ let timer = null;
 let autoRefreshOn = localStorage.getItem('autoRefreshOn') !== '0';
 let spotsRefreshTimer = null;
 let lastSpotIds = [];
+let mapZoomSet = false;
 
 const TXT_ON  = <?= json_encode(t('auto_refresh_on')) ?>;
 const TXT_OFF = <?= json_encode(t('auto_refresh_off')) ?>;
@@ -638,6 +639,33 @@ function startBannerLoop(items) {
     }, 5000);
 }
 
+// Oblicz maksymalny dystans między wszystkimi miastami
+function calculateMaxDistance(items) {
+    if (!items || items.length === 0) return 0;
+    
+    let maxDist = 0;
+    items.forEach(item => {
+        const lat1 = item.from.lat;
+        const lng1 = item.from.lng;
+        const lat2 = item.to.lat;
+        const lng2 = item.to.lng;
+        
+        // Haversine formula
+        const R = 6371; // km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLng/2) * Math.sin(dLng/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const dist = R * c;
+        
+        if (dist > maxDist) maxDist = dist;
+    });
+    
+    return maxDist;
+}
+
 async function loadMapData() {
     if (!plMap || !mapLayer) return;
     mapLayer.clearLayers();
@@ -728,19 +756,33 @@ async function loadMapData() {
 
         startBannerLoop(items);
 
-        if (lineCount <= 0) {
-            plMap.fitBounds(POLAND_BOUNDS, { padding: [20, 20] });
-        } else if (lineCount <= 3) {
-            const b = L.latLngBounds(allBounds);
-            plMap.fitBounds(b, { padding: [70, 70] });
-            plMap.setZoom(clampZoom(plMap.getZoom(), 6, 10));
-        } else if (lineCount <= 9) {
-            const b = L.latLngBounds(allBounds);
-            plMap.fitBounds(b, { padding: [50, 50] });
-            plMap.setZoom(clampZoom(plMap.getZoom(), 5, 8));
-        } else {
-            plMap.fitBounds(POLAND_BOUNDS, { padding: [20, 20] });
-            plMap.setZoom(clampZoom(plMap.getZoom(), 5, 6));
+        // FIXED ZOOM - ustal RAZ i nie zmieniaj
+        if (!mapZoomSet && lineCount > 0) {
+            const maxDistance = calculateMaxDistance(items);
+            
+            // Centrum mapy
+            const allLats = [];
+            const allLngs = [];
+            items.forEach(item => {
+                allLats.push(item.from.lat, item.to.lat);
+                allLngs.push(item.from.lng, item.to.lng);
+            });
+            const centerLat = (Math.min(...allLats) + Math.max(...allLats)) / 2;
+            const centerLng = (Math.min(...allLngs) + Math.max(...allLngs)) / 2;
+            
+            // Ustal zoom na podstawie dystansu
+            let zoomLevel = 6; // default - Polska
+            if (maxDistance < 140) {
+                zoomLevel = 12; // Przybliż dla małych odległości
+            } else if (maxDistance < 300) {
+                zoomLevel = 10;
+            } else if (maxDistance < 500) {
+                zoomLevel = 8;
+            }
+            
+            // Ustaw widok RAZ - bez zmiany
+            plMap.setView([centerLat, centerLng], zoomLevel);
+            mapZoomSet = true;
         }
 
     } catch (e) {
