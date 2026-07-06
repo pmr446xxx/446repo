@@ -214,147 +214,41 @@ function formatTimeAgo(string $createdAt): string {
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-/* NEON BANNER - 446 PMR CLUSTER */
-.neon-banner {
+/* WORLD MAP BACKGROUND BANNER */
+.world-map-banner {
     width: 100%;
+    height: 180px;
     background: #0a0e27;
-    background-image: 
-        radial-gradient(circle at 20% 50%, rgba(255, 0, 0, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(255, 200, 0, 0.05) 0%, transparent 50%);
-    padding: 40px 20px;
-    text-align: center;
-    margin-bottom: 30px;
     position: relative;
     overflow: hidden;
-    border-bottom: 3px solid rgba(255, 0, 0, 0.5);
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 2px solid rgba(255, 0, 0, 0.2);
 }
 
-.neon-banner::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: 
-        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 0, 0, 0.03) 2px, rgba(255, 0, 0, 0.03) 4px),
-        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255, 0, 0, 0.03) 2px, rgba(255, 0, 0, 0.03) 4px);
-    pointer-events: none;
-}
-
-.neon-content {
+.banner-text {
     position: relative;
-    z-index: 1;
+    z-index: 10;
+    text-align: center;
 }
 
-.neon-title {
-    font-size: 72px;
-    font-weight: 900;
-    letter-spacing: 4px;
-    margin: 0;
-    line-height: 1;
-    text-shadow: 
-        0 0 10px #ff0000,
-        0 0 20px #ff0000,
-        0 0 30px #ff0000,
-        0 0 40px #ff2222,
-        0 0 70px #ff0000,
-        0 0 80px #ff0000,
-        0 0 100px #ff0000;
-    animation: neonGlow 1.5s ease-in-out infinite;
-}
-
-.neon-title .red {
-    color: #ff0000;
-}
-
-.neon-title .yellow {
-    color: #ffff00;
-    text-shadow: 
-        0 0 10px #ffff00,
-        0 0 20px #ffff00,
-        0 0 30px #ffff00,
-        0 0 40px #ffff00,
-        0 0 70px #ffff00,
-        0 0 80px #ffff00,
-        0 0 100px #ffff00;
-}
-
-.neon-subtitle {
-    font-size: 28px;
+.domain-text {
+    font-size: 52px;
     font-weight: 700;
     letter-spacing: 2px;
-    margin-top: 15px;
     color: #ff0000;
-    text-shadow: 
-        0 0 10px #ff0000,
-        0 0 20px #ff0000,
-        0 0 30px #ff0000,
-        0 0 40px #ff2222;
-    animation: neonGlow 1.5s ease-in-out infinite;
+    margin: 0;
+    padding: 0;
 }
 
-.neon-domain {
-    font-size: 36px;
-    font-weight: 900;
-    letter-spacing: 3px;
-    margin-top: 15px;
-    color: #ffff00;
-    text-shadow: 
-        0 0 10px #ffff00,
-        0 0 20px #ffff00,
-        0 0 30px #ffff00,
-        0 0 40px #ffff00,
-        0 0 70px #ffff00,
-        0 0 80px #ffff00,
-        0 0 100px #ffff00;
-    animation: neonGlowYellow 1.5s ease-in-out infinite;
-}
-
-@keyframes neonGlow {
-    0%, 100% {
-        text-shadow: 
-            0 0 10px #ff0000,
-            0 0 20px #ff0000,
-            0 0 30px #ff0000,
-            0 0 40px #ff2222,
-            0 0 70px #ff0000,
-            0 0 80px #ff0000,
-            0 0 100px #ff0000;
-    }
-    50% {
-        text-shadow: 
-            0 0 5px #ff0000,
-            0 0 10px #ff0000,
-            0 0 20px #ff0000,
-            0 0 30px #ff1111,
-            0 0 40px #ff0000,
-            0 0 50px #ff0000,
-            0 0 60px #ff0000;
-    }
-}
-
-@keyframes neonGlowYellow {
-    0%, 100% {
-        text-shadow: 
-            0 0 10px #ffff00,
-            0 0 20px #ffff00,
-            0 0 30px #ffff00,
-            0 0 40px #ffff00,
-            0 0 70px #ffff00,
-            0 0 80px #ffff00,
-            0 0 100px #ffff00;
-    }
-    50% {
-        text-shadow: 
-            0 0 5px #ffff00,
-            0 0 10px #ffff00,
-            0 0 20px #ffff00,
-            0 0 30px #ffff00,
-            0 0 40px #ffff00,
-            0 0 50px #ffff00,
-            0 0 60px #ffff00;
-    }
+/* WORLD MAP LINES - SVG Background */
+svg.world-map-svg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0.25;
 }
 
 #plMap { height: 440px; border-radius: 10px; overflow: hidden; }
@@ -465,14 +359,35 @@ tr.new-spot {
 }
 </style>
 
-<!-- NEON BANNER -->
-<div class="neon-banner">
-    <div class="neon-content">
-        <h1 class="neon-title">
-            <span class="red">446</span> <span class="red">PMR</span> <span class="red">CLUSTER</span>
-        </h1>
-        <div class="neon-subtitle">PMR DX CLUSTER</div>
-        <div class="neon-domain">446DX.pl</div>
+<!-- WORLD MAP BANNER WITH 446DX.pl -->
+<div class="world-map-banner">
+    <svg class="world-map-svg" viewBox="0 0 1000 200">
+        <!-- Simplified world map lines with country connections -->
+        <line x1="50" y1="100" x2="200" y2="80" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
+        <line x1="200" y1="80" x2="350" y2="90" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
+        <line x1="350" y1="90" x2="450" y2="70" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
+        <line x1="450" y1="70" x2="600" y2="100" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
+        <line x1="600" y1="100" x2="750" y2="80" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
+        <line x1="750" y1="80" x2="900" y2="110" stroke="rgba(255,0,0,0.4)" stroke-width="1"/>
+        
+        <!-- Vertical connections -->
+        <line x1="150" y1="60" x2="150" y2="140" stroke="rgba(255,0,0,0.3)" stroke-width="1"/>
+        <line x1="350" y1="50" x2="350" y2="130" stroke="rgba(255,0,0,0.3)" stroke-width="1"/>
+        <line x1="550" y1="40" x2="550" y2="150" stroke="rgba(255,0,0,0.3)" stroke-width="1"/>
+        <line x1="750" y1="60" x2="750" y2="140" stroke="rgba(255,0,0,0.3)" stroke-width="1"/>
+        
+        <!-- Connection dots -->
+        <circle cx="50" cy="100" r="3" fill="rgba(255,0,0,0.4)"/>
+        <circle cx="200" cy="80" r="3" fill="rgba(255,0,0,0.4)"/>
+        <circle cx="350" cy="90" r="3" fill="rgba(255,0,0,0.4)"/>
+        <circle cx="450" cy="70" r="3" fill="rgba(255,0,0,0.4)"/>
+        <circle cx="600" cy="100" r="3" fill="rgba(255,0,0,0.4)"/>
+        <circle cx="750" cy="80" r="3" fill="rgba(255,0,0,0.4)"/>
+        <circle cx="900" cy="110" r="3" fill="rgba(255,0,0,0.4)"/>
+    </svg>
+    
+    <div class="banner-text">
+        <h1 class="domain-text">446DX.pl</h1>
     </div>
 </div>
 
@@ -817,7 +732,6 @@ function calculateMaxDistance(items) {
         if (dist > maxDist) maxDist = dist;
     });
     
-    console.log('Max distance calculated:', maxDist, 'km');
     return maxDist;
 }
 
@@ -934,8 +848,6 @@ async function loadMapData() {
             } else if (maxDistance < 500) {
                 zoomLevel = 8;
             }
-            
-            console.log('Setting map view - center:', centerLat, centerLng, 'zoom:', zoomLevel, 'distance:', maxDistance);
             
             // Ustaw widok RAZ - bez zmiany
             plMap.setView([centerLat, centerLng], zoomLevel);
