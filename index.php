@@ -475,7 +475,6 @@ let timer = null;
 let autoRefreshOn = localStorage.getItem('autoRefreshOn') !== '0';
 let spotsRefreshTimer = null;
 let lastSpotIds = [];
-let mapZoomSet = false;
 
 const TXT_ON  = <?= json_encode(t('auto_refresh_on')) ?>;
 const TXT_OFF = <?= json_encode(t('auto_refresh_off')) ?>;
@@ -547,13 +546,8 @@ document.getElementById('autoRefreshBtn')?.addEventListener('click', () => {
 // ---- MAPA ----
 let plMap = null;
 let mapLayer = null;
-const POLAND_BOUNDS = L.latLngBounds([49.0, 14.1], [54.9, 24.2]);
-
-// Animated banner vars
-let bannerEl = null;
-let bannerTimer = null;
-let bannerIndex = 0;
-let bannerSignature = '';
+let lastNewestSpotId = null;
+let zoomInTimer = null;
 
 function initMap() {
     plMap = L.map('plMap').setView([52.1, 19.4], 6);
@@ -574,128 +568,18 @@ function escapeHtml(s){
         .replaceAll("'","&#039;");
 }
 
-function clampZoom(z, min, max) {
-    return Math.max(min, Math.min(max, z));
-}
-
 function spacedKm(n) {
     const digits = String(Math.max(0, Number(n) || 0)).split('').join(' ');
     return digits + ' km';
 }
 
-function ensureBanner() {
-    const panelBody = document.getElementById('mapPanelBody');
-    if (!panelBody) return null;
-
-    if (!bannerEl) {
-        bannerEl = document.createElement('div');
-        bannerEl.className = 'map-floating-banner';
-        panelBody.appendChild(bannerEl);
-    }
-    return bannerEl;
-}
-
-function renderBannerItem(item) {
-    const el = ensureBanner();
-    if (!el || !item) return;
-
-    const from = escapeHtml(item.from.city);
-    const to   = escapeHtml(item.to.city);
-    const km   = spacedKm(item.distance_km);
-
-    el.innerHTML = `
-      <span class="banner-city">${from}</span>
-      <span class="banner-arrow">→</span>
-      <span class="banner-city">${to}</span>
-      <span class="banner-dot">•</span>
-      <span class="banner-km">${km}</span>
-    `;
-
-    el.classList.remove('show');
-    void el.offsetWidth;
-    el.classList.add('show');
-}
-
-function startBannerLoop(items) {
-    if (!Array.isArray(items) || items.length === 0) {
-        if (bannerTimer) clearInterval(bannerTimer);
-        return;
-    }
-
-    const sig = items.map(x => x.id).join(',');
-    if (sig !== bannerSignature) {
-        bannerSignature = sig;
-        bannerIndex = 0;
-    }
-
-    if (bannerTimer) clearInterval(bannerTimer);
-
-    renderBannerItem(items[bannerIndex % items.length]);
-    bannerIndex++;
-
-    bannerTimer = setInterval(() => {
-        renderBannerItem(items[bannerIndex % items.length]);
-        bannerIndex++;
-    }, 5000);
-}
-
-// ===== AUTO ZOOM - OBLICZ BOUNDS I ZOOM BEZPOSREDNIO =====
-function calculateBoundsAndZoom(items) {
-    if (!items || items.length === 0) {
-        return { bounds: null, zoom: 6 };
-    }
-
-    const allLats = [];
-    const allLngs = [];
-
-    items.forEach(item => {
-        allLats.push(item.from.lat, item.to.lat);
-        allLngs.push(item.from.lng, item.to.lng);
-    });
-
-    if (allLats.length === 0) {
-        return { bounds: null, zoom: 6 };
-    }
-
-    const minLat = Math.min(...allLats);
-    const maxLat = Math.max(...allLats);
-    const minLng = Math.min(...allLngs);
-    const maxLng = Math.max(...allLngs);
-
-    const latDiff = maxLat - minLat;
-    const lngDiff = maxLng - minLng;
-    const maxDiff = Math.max(latDiff, lngDiff);
-
-    console.log('Bounds - Lat:', minLat, 'to', maxLat, 'Lng:', minLng, 'to', maxLng);
-    console.log('Lat diff:', latDiff, 'Lng diff:', lngDiff, 'Max diff:', maxDiff);
-
-    // Oblicz zoom na podstawie rozmiaru bounds
-    let zoom = 6;
-    if (maxDiff < 0.5) {
-        zoom = 13; // Bardzo mały obszar
-    } else if (maxDiff < 1) {
-        zoom = 12; // Mały obszar < 140km
-    } else if (maxDiff < 1.5) {
-        zoom = 11;
-    } else if (maxDiff < 2) {
-        zoom = 10;
-    } else if (maxDiff < 3) {
-        zoom = 9;
-    } else if (maxDiff < 4) {
-        zoom = 8;
-    } else if (maxDiff < 6) {
-        zoom = 7;
-    }
-
-    console.log('Calculated zoom:', zoom);
-
-    const bounds = L.latLngBounds(
-        [minLat, minLng],
-        [maxLat, maxLng]
-    );
-    const center = bounds.getCenter();
-
-    return { bounds, center, zoom };
+function calculateZoomLevel(distance_km) {
+    if (distance_km < 15) return 13;
+    if (distance_km < 30) return 12;
+    if (distance_km < 50) return 11;
+    if (distance_km < 100) return 10;
+    if (distance_km < 200) return 9;
+    return 8;
 }
 
 async function loadMapData() {
@@ -710,6 +594,7 @@ async function loadMapData() {
         const items = data.items.slice(0, 30);
         let lineCount = 0;
 
+        // Rysuj wszystkie linie
         items.forEach((s, i) => {
             const from = [Number(s.from.lat), Number(s.from.lng)];
             const to   = [Number(s.to.lat), Number(s.to.lng)];
@@ -719,24 +604,24 @@ async function loadMapData() {
             const ageFactor = Math.min(i / 10, 1);
 
             L.circleMarker(from, {
-                radius: isNewest ? 7 : 5,
+                radius: isNewest ? 8 : 5,
                 color: '#22c55e',
                 fillColor: '#22c55e',
                 fillOpacity: isNewest ? 1 : (0.85 - ageFactor * 0.35),
-                weight: isNewest ? 2 : 1
-            }).addTo(mapLayer).bindTooltip('FROM: ' + escapeHtml(s.from.city));
+                weight: isNewest ? 3 : 1
+            }).addTo(mapLayer).bindTooltip(escapeHtml(s.from.city));
 
             L.circleMarker(to, {
-                radius: isNewest ? 7 : 5,
+                radius: isNewest ? 8 : 5,
                 color: '#3b82f6',
                 fillColor: '#3b82f6',
                 fillOpacity: isNewest ? 1 : (0.85 - ageFactor * 0.35),
-                weight: isNewest ? 2 : 1
-            }).addTo(mapLayer).bindTooltip('TO: ' + escapeHtml(s.to.city));
+                weight: isNewest ? 3 : 1
+            }).addTo(mapLayer).bindTooltip(escapeHtml(s.to.city));
 
             const line = L.polyline([from, to], {
                 color: isNewest ? '#ff1e1e' : '#ff6b6b',
-                weight: isNewest ? 7 : Math.max(3, 5 - Math.floor(i / 6)),
+                weight: isNewest ? 8 : Math.max(3, 5 - Math.floor(i / 6)),
                 opacity: isNewest ? 1 : Math.max(0.35, 0.8 - ageFactor * 0.45),
                 lineCap: 'round'
             }).addTo(mapLayer);
@@ -746,7 +631,7 @@ async function loadMapData() {
                 const pulse = setInterval(() => {
                     if (!plMap || !plMap.hasLayer(line)) { clearInterval(pulse); return; }
                     on = !on;
-                    line.setStyle({ weight: on ? 8 : 6, opacity: on ? 1 : 0.6 });
+                    line.setStyle({ weight: on ? 10 : 8, opacity: on ? 1 : 0.7 });
                 }, 650);
             }
 
@@ -784,15 +669,36 @@ async function loadMapData() {
             lineCount++;
         });
 
-        startBannerLoop(items);
-
-        // ===== AUTO ZOOM - USTAWIENIE MAPY =====
-        if (!mapZoomSet && lineCount > 0) {
-            const { bounds, center, zoom } = calculateBoundsAndZoom(items);
+        // ===== DYNAMICZNY ZOOM =====
+        if (items.length > 0) {
+            const newestSpot = items[0];
+            const isNewSpot = lastNewestSpotId !== newestSpot.id;
             
-            console.log('Ustawianie mapy - Center:', center, 'Zoom:', zoom);
-            plMap.setView(center, zoom);
-            mapZoomSet = true;
+            if (isNewSpot) {
+                console.log('Nowy spot! ID:', newestSpot.id, 'Dystans:', newestSpot.distance_km, 'km');
+                lastNewestSpotId = newestSpot.id;
+
+                if (zoomInTimer) clearTimeout(zoomInTimer);
+
+                // ZBLIŻ NA 30 SEKUND
+                const fromLat = Number(newestSpot.from.lat);
+                const fromLng = Number(newestSpot.from.lng);
+                const toLat = Number(newestSpot.to.lat);
+                const toLng = Number(newestSpot.to.lng);
+
+                const centerLat = (fromLat + toLat) / 2;
+                const centerLng = (fromLng + toLng) / 2;
+                const zoom = calculateZoomLevel(newestSpot.distance_km);
+
+                console.log('Zbliżam do:', centerLat, centerLng, 'Zoom:', zoom);
+                plMap.setView([centerLat, centerLng], zoom, { animate: true, duration: 1.5 });
+
+                // PO 30 SEKUNDACH - ODDAL DO CAŁEJ MAPY
+                zoomInTimer = setTimeout(() => {
+                    console.log('Oddalam mapę');
+                    plMap.setView([52.1, 19.4], 6, { animate: true, duration: 1.5 });
+                }, 30000);
+            }
         }
 
     } catch (e) {
