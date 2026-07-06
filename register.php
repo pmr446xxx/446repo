@@ -20,15 +20,6 @@ if($_SERVER["REQUEST_METHOD"]=="POST")
     $password=$_POST["password"] ?? "";
     $password2=$_POST["password2"] ?? "";
 
-    $country=trim($_POST["country"] ?? "");
-    $city=trim($_POST["city"] ?? "");
-
-    $grid=trim($_POST["grid"] ?? "");
-    $radio=trim($_POST["radio"] ?? "");
-    $antenna=trim($_POST["antenna"] ?? "");
-    $station_type=trim($_POST["station_type"] ?? "");
-    $about=trim($_POST["about"] ?? "");
-
     if($operator=="")
         $errors[]="Podaj nazwę operatora.";
 
@@ -47,19 +38,13 @@ if($_SERVER["REQUEST_METHOD"]=="POST")
     if($password!=$password2)
         $errors[]="Hasła nie są identyczne.";
 
-    if($country=="")
-        $errors[]="Podaj kraj.";
-
-    if($city=="")
-        $errors[]="Podaj miejscowość.";
-
-    $stmt=$pdo->prepare("SELECT id FROM users WHERE operator=?");
+    $stmt=$pdo->prepare("SELECT operator FROM operators WHERE operator=?");
     $stmt->execute([$operator]);
 
     if($stmt->fetch())
         $errors[]="Taki operator już istnieje.";
 
-    $stmt=$pdo->prepare("SELECT id FROM users WHERE email=?");
+    $stmt=$pdo->prepare("SELECT operator FROM operators WHERE email=?");
     $stmt->execute([$email]);
 
     if($stmt->fetch())
@@ -72,20 +57,14 @@ if($_SERVER["REQUEST_METHOD"]=="POST")
 
         $stmt=$pdo->prepare("
 
-INSERT INTO users
+INSERT INTO operators
 
 (
 
 operator,
 email,
 password,
-country,
-city,
-grid,
-radio,
-antenna,
-station_type,
-about
+created_at
 
 )
 
@@ -96,13 +75,7 @@ VALUES
 ?,
 ?,
 ?,
-?,
-?,
-?,
-?,
-?,
-?,
-?
+NOW()
 
 )
 
@@ -112,14 +85,7 @@ VALUES
 
             $operator,
             $email,
-            $password,
-            $country,
-            $city,
-            $grid,
-            $radio,
-            $antenna,
-            $station_type,
-            $about
+            $password
 
         ]);
 
@@ -246,145 +212,6 @@ class="form-control"
 required>
 
 </div>
-
-</div>
-
-
-<div class="row">
-
-<div class="col-md-6 mb-3">
-
-<label class="form-label">
-
-Kraj *
-
-</label>
-
-<input
-type="text"
-name="country"
-class="form-control"
-required
-value="<?= htmlspecialchars($_POST['country'] ?? 'Polska') ?>">
-
-</div>
-
-<div class="col-md-6 mb-3">
-
-<label class="form-label">
-
-Miejscowość *
-
-</label>
-
-<input
-type="text"
-name="city"
-class="form-control"
-required
-placeholder="np. Elbląg"
-value="<?= htmlspecialchars($_POST['city'] ?? '') ?>">
-
-</div>
-
-</div>
-
-
-<div class="mb-3">
-
-<label class="form-label">
-
-Grid (opcjonalnie)
-
-</label>
-
-<input
-type="text"
-name="grid"
-class="form-control"
-placeholder="np. JO94HM"
-value="<?= htmlspecialchars($_POST['grid'] ?? '') ?>">
-
-</div>
-
-
-<div class="row">
-
-<div class="col-md-6 mb-3">
-
-<label class="form-label">
-
-Radio
-
-</label>
-
-<input
-type="text"
-name="radio"
-class="form-control"
-placeholder="np. MOTOROLA T82"
-value="<?= htmlspecialchars($_POST['radio'] ?? '') ?>">
-
-</div>
-
-<div class="col-md-6 mb-3">
-
-<label class="form-label">
-
-Antena
-
-</label>
-
-<input
-type="text"
-name="antenna"
-class="form-control"
-placeholder="np. FABRYCZNA"
-value="<?= htmlspecialchars($_POST['antenna'] ?? '') ?>">
-
-</div>
-
-</div>
-
-
-<div class="mb-3">
-
-<label class="form-label">
-
-Rodzaj stacji
-
-</label>
-
-<select
-name="station_type"
-class="form-select">
-
-<option value="">-- wybierz --</option>
-
-<option value="Ręczna">Ręczna</option>
-
-<option value="Mobil">Mobil</option>
-
-<option value="Baza">Baza</option>
-
-</select>
-
-</div>
-
-
-<div class="mb-3">
-
-<label class="form-label">
-
-Opis operatora
-
-</label>
-
-<textarea
-name="about"
-class="form-control"
-rows="5"
-placeholder="Napisz kilka słów o sobie..."><?= htmlspecialchars($_POST['about'] ?? '') ?></textarea>
 
 </div>
 
