@@ -172,7 +172,7 @@ type="email"
 name="email"
 class="form-control"
 required
-value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+value="">
 
 </div>
 
@@ -193,7 +193,8 @@ Hasło *
 type="password"
 name="password"
 class="form-control"
-required>
+required
+value="">
 
 </div>
 
@@ -209,7 +210,8 @@ Powtórz hasło *
 type="password"
 name="password2"
 class="form-control"
-required>
+required
+value="">
 
 </div>
 
