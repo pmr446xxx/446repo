@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $host    = '127.0.0.1';
-$port    = '3307';
+$port    = '3306';
 $db      = '446cluster';
 $user    = 'root';
 $pass    = '';
