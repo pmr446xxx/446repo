@@ -1,285 +1,53 @@
 <?php
 declare(strict_types=1);
-
-/*
- * 446CLUSTER — mapa propagacji troposferycznej
- * Osadzenie oficjalnej mapy Tropocast. Klucz API nie jest wymagany do iframe.
- * Geolokalizacja działa w przeglądarce na HTTPS po zgodzie użytkownika.
- */
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-$operator = $_SESSION['operator'] ?? null;
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
 ?>
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="google" content="notranslate">
-    <meta name="theme-color" content="#080d12">
-    <title>Mapa Tropo | 446CLUSTER</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-    <style>
-        :root {
-            color-scheme: dark;
-            --bg: #080d12;
-            --panel: #111a22;
-            --panel2: #15232d;
-            --line: #273c49;
-            --green: #22c55e;
-            --green2: #16a34a;
-            --text: #edf4f7;
-            --muted: #9aabb6;
-            --yellow: #fbbf24;
-            --blue: #38bdf8;
-        }
-        * { box-sizing: border-box; }
-        html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: Inter, "Segoe UI", Arial, sans-serif; }
-        body { background-image: radial-gradient(ellipse at 50% -20%, #173040 0, transparent 50%); }
-        a { color: var(--blue); text-decoration: none; }
-        .shell { width: min(1800px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 30px; }
-        .topbar { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:14px 18px; background:rgba(15,25,34,.96); border:1px solid var(--line); border-radius:12px; box-shadow:0 12px 34px #0007; }
-        .brand { display:flex; align-items:center; gap:13px; min-width:0; }
-        .brand-mark { width:46px; height:46px; display:grid; place-items:center; border-radius:10px; color:#04120a; background:var(--green); font-weight:1000; font-size:19px; box-shadow:0 0 22px #22c55e33; }
-        h1 { margin:0; font-size:clamp(18px,2.2vw,27px); letter-spacing:.04em; }
-        .sub { color:var(--muted); font-size:12px; margin-top:4px; letter-spacing:.08em; }
-        .clock { text-align:right; font-size:13px; font-weight:800; color:#b7c7d0; white-space:nowrap; }
-        .clock strong { display:block; color:var(--green); font-size:15px; margin-top:4px; }
-        .toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:9px; margin:12px 0; padding:10px 12px; background:#0f1921; border:1px solid var(--line); border-radius:10px; }
-        .status { display:flex; align-items:center; gap:8px; color:#c8d5dc; font-size:12px; font-weight:800; margin-right:auto; }
-        .pulse { width:9px; height:9px; border-radius:50%; background:var(--green); box-shadow:0 0 0 5px #22c55e20; }
-        .btn { border:1px solid #315166; color:#eaf5fa; background:#182a36; border-radius:7px; padding:9px 13px; cursor:pointer; font-weight:800; font-size:12px; transition:.15s ease; }
-        .btn:hover { border-color:var(--green); background:#1d3541; }
-        .btn.primary { background:var(--green2); border-color:var(--green2); color:#04140a; }
-        .btn.primary:hover { background:var(--green); }
-        .grid { display:grid; grid-template-columns:minmax(300px,.83fr) minmax(520px,1.55fr); gap:14px; align-items:stretch; }
-        .card { min-width:0; background:rgba(14,23,31,.97); border:1px solid var(--line); border-radius:12px; overflow:hidden; box-shadow:0 10px 28px #0005; }
-        .card-head { min-height:52px; padding:12px 15px; display:flex; align-items:center; justify-content:space-between; gap:12px; background:#13212b; border-bottom:1px solid var(--line); }
-        .card-head h2 { font-size:14px; margin:0; letter-spacing:.04em; text-transform:uppercase; }
-        .tag { color:#7ceaa1; background:#123222; border:1px solid #23623e; font-size:10px; font-weight:900; padding:5px 8px; border-radius:20px; white-space:nowrap; }
-        #satelliteMap { height:620px; width:100%; background:#152430; }
-        .map-footer { padding:12px 14px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; border-top:1px solid var(--line); color:var(--muted); font-size:11px; }
-        .map-footer strong { color:#dce8ed; }
-        .forecast-frame-wrap { height:620px; background:#09121a; }
-        #forecastFrame { border:0; display:block; width:100%; height:100%; background:#09121a; }
-        .hint { padding:12px 15px; border-top:1px solid var(--line); background:#101a22; color:var(--muted); font-size:11px; line-height:1.55; }
-        .hint strong { color:#f3d27a; }
-        .bottom { margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-        .info { border:1px solid var(--line); border-radius:10px; background:#0f1921; padding:14px 16px; color:var(--muted); font-size:12px; line-height:1.6; }
-        .info h3 { color:#eaf2f6; font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.04em; }
-        .legend { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-top:8px; }
-        .legend span { display:inline-flex; align-items:center; gap:5px; padding:5px 8px; border-radius:6px; background:#17242d; color:#d5e0e5; font-size:10px; }
-        .swatch { width:8px; height:8px; border-radius:50%; display:inline-block; }
-        .leaflet-container { font:12px Inter,"Segoe UI",Arial,sans-serif; }
-        .leaflet-control-attribution { font-size:9px !important; }
-        .loc-popup { color:#111; font-weight:700; }
-        .footer { text-align:center; color:#647783; font-size:10px; padding:18px 0 0; }
-        @media (max-width: 1050px) {
-            .grid { grid-template-columns:1fr; }
-            #satelliteMap, .forecast-frame-wrap { height: min(70vh, 560px); min-height:390px; }
-        }
-        @media (max-width: 620px) {
-            .shell { width:calc(100% - 16px); padding-top:8px; }
-            .topbar { padding:11px; align-items:flex-start; }
-            .brand-mark { width:39px; height:39px; font-size:16px; }
-            .clock { font-size:10px; }
-            .clock strong { font-size:12px; }
-            .toolbar { align-items:stretch; }
-            .status { width:100%; padding:3px 0 6px; }
-            .btn { flex:1; padding:10px 7px; }
-            .bottom { grid-template-columns:1fr; }
-            #satelliteMap, .forecast-frame-wrap { height:440px; min-height:440px; }
-        }
-    </style>
-</head>
-<body>
-<div class="shell">
-    <header class="topbar">
-        <div class="brand">
-            <div class="brand-mark">446</div>
-            <div>
-                <h1>MAPA PROPAGACJI TROPOSFERYCZNEJ</h1>
-                <div class="sub">446CLUSTER · VHF / UHF · POLSKA</div>
-            </div>
-        </div>
-        <div class="clock">
-            <span id="dateText">Ładowanie daty…</span>
-            <strong id="timeText">--:-- CET · CZAS POLSKI</strong>
-        </div>
-    </header>
-
-    <div class="toolbar">
-        <div class="status"><span class="pulse"></span><span id="locationStatus">Mapa Polski · oczekiwanie na zgodę lokalizacji</span></div>
-        <button class="btn primary" id="locateBtn" type="button">⌖ WYKRYJ MOJĄ LOKALIZACJĘ</button>
-        <button class="btn" id="polandBtn" type="button">CAŁA POLSKA</button>
-        <button class="btn" id="refreshBtn" type="button">↻ ODŚWIEŻ PROGNOZĘ</button>
-    </div>
-
-    <main class="grid">
-        <section class="card">
-            <div class="card-head">
-                <h2>Mapa satelitarna · Polska</h2>
-                <span class="tag">GPS / AUTO-ZOOM</span>
-            </div>
-            <div id="satelliteMap" role="application" aria-label="Mapa satelitarna Polski z lokalizacją użytkownika"></div>
-            <div class="map-footer">
-                <span><strong id="coords">Pozycja: nieustalona</strong></span>
-                <span>Widok startowy: cała Polska · po GPS: przybliżenie regionu</span>
-            </div>
-            <div class="hint">Lokalizacja jest pobierana przez przeglądarkę dopiero po wyrażeniu zgody. Strona 446CLUSTER pokazuje pozycję na tej mapie; nie wysyła jej automatycznie do serwisu Tropocast.</div>
-        </section>
-
-        <section class="card">
-            <div class="card-head">
-                <h2>Prognoza VHF / UHF · dane Tropocast</h2>
-                <span class="tag">OKNO DO 72 H</span>
-            </div>
-            <div class="forecast-frame-wrap">
-                <iframe id="forecastFrame"
-                        src="https://tropocast.eu/map?lang=pl"
-                        title="Interaktywna mapa propagacji troposferycznej Tropocast"
-                        loading="eager"
-                        allow="geolocation"
-                        referrerpolicy="strict-origin-when-cross-origin"></iframe>
-            </div>
-            <div class="hint"><strong>Przybliżenie prognozy do Twojej pozycji:</strong> wewnątrz mapy Tropocast wybierz przycisk „Użyj GPS”. Przeglądarka nie pozwala stronie 446CLUSTER sterować mapą innego serwisu bezpośrednio. Dane prognozy są publikowane przez Tropocast; odświeżenie ramki pobiera najnowszy dostępny zestaw.</div>
-        </section>
-    </main>
-
-    <div class="bottom">
-        <section class="info">
-            <h3>Legenda potencjału propagacyjnego</h3>
-            Kolory na mapie Tropocast oznaczają modelowany potencjał atmosferyczny, a nie gwarantowany zasięg łączności.
-            <div class="legend">
-                <span><i class="swatch" style="background:#4774d8"></i> marginalny / słaby</span>
-                <span><i class="swatch" style="background:#29b77b"></i> umiarkowany</span>
-                <span><i class="swatch" style="background:#c6d843"></i> dobry</span>
-                <span><i class="swatch" style="background:#f5a13b"></i> silny</span>
-                <span><i class="swatch" style="background:#e34b4b"></i> bardzo silny</span>
-                <span><i class="swatch" style="background:#e45bb4"></i> wyjątkowo silny</span>
-            </div>
-        </section>
-        <section class="info">
-            <h3>Ważne dla 144 MHz i 433 MHz</h3>
-            Osadzona mapa pokazuje wspólny modelowany potencjał propagacji VHF/UHF. Nie rozdziela wyniku na osobną, skalibrowaną prognozę 144 MHz i 433 MHz. Rzeczywiste łączności zależą również od anten, wysokości, mocy, polaryzacji, terenu i zakłóceń.
-        </section>
-    </div>
-    <div class="footer">446CLUSTER · Mapa wykorzystuje zewnętrzne kafelki satelitarne Esri i prognozę Tropocast · Lokalizacja wymaga HTTPS</div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#070d12"><title>446dx.pl — Aktualne warunki propagacyjne</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+:root{color-scheme:dark;--bg:#070d12;--panel:#101a23;--line:#29404f;--text:#eef5f8;--muted:#a9bac5;--green:#22c55e;--yellow:#facc15}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,"Segoe UI",Arial,sans-serif}body{background:radial-gradient(ellipse at 50% -20%,#183040 0,transparent 48%)}
+.shell{width:min(1900px,calc(100% - 28px));margin:auto;padding:14px 0 28px}
+.header{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 22px;background:#101a23;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px #0007}.brand{display:flex;align-items:center;gap:16px}.brandmark{font-weight:1000;font-size:22px;color:#07140b;background:var(--green);padding:10px 13px;border-radius:9px}.brandname{font-size:clamp(18px,2.2vw,27px);font-weight:1000;letter-spacing:.04em}.subtitle{margin-top:5px;color:#c5d2d9;font-size:clamp(11px,1.4vw,15px);font-weight:800;letter-spacing:.12em}.clock{text-align:right;font-size:12px;color:#b8c8d1;font-weight:800;white-space:nowrap}.clock strong{display:block;font-size:16px;color:var(--green);margin-top:5px}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;margin:12px 0;background:#101a23;border:1px solid var(--line);border-radius:10px}.state{display:flex;align-items:center;gap:9px;margin-right:auto;color:#d2e0e6;font-size:12px;font-weight:900}.dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 5px #22c55e22}.btn,select{border:1px solid #385363;background:#192b37;color:#f1f7fa;padding:10px 13px;border-radius:7px;font-weight:900;font-size:12px;cursor:pointer}.btn:hover{border-color:var(--green);background:#203945}.btn.primary{background:#159447;border-color:#159447;color:#04140a}.btn.primary:hover{background:#20b85a}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:14px;align-items:stretch}.card{background:#101a23;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 10px 28px #0005;min-width:0}.cardhead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 17px;background:#152530;border-bottom:1px solid var(--line)}.cardhead h2{font-size:14px;letter-spacing:.06em;text-transform:uppercase;margin:0}.tag{font-size:10px;font-weight:1000;color:#7ff0a3;background:#123523;border:1px solid #256644;border-radius:30px;padding:6px 10px;white-space:nowrap}#map{height:690px;width:100%;background:#14232c}.mapfoot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 15px;border-top:1px solid var(--line);color:var(--muted);font-size:11px}.mapfoot strong{color:#eef5f8}
+.side{display:flex;flex-direction:column;gap:12px}.sidecard{background:#101a23;border:1px solid var(--line);border-radius:11px;padding:16px}.sidecard h3{font-size:13px;margin:0 0 13px;letter-spacing:.06em}.selected{font-size:22px;font-weight:1000;color:#fff}.coords{margin-top:7px;font-size:11px;color:var(--muted);line-height:1.5}.metric{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid #273b47;color:#b9c8d0;font-size:12px}.metric strong{color:#fff;font-size:15px}.radiusbadge{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;background:#173d2a;border:1px solid #24864c;color:#adf2c5;font-size:12px;font-weight:1000}.citylist{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.citychip{font-size:11px;color:#e0eaf0;background:#1c2c36;border:1px solid #344b58;padding:6px 8px;border-radius:6px}.instructions{font-size:11px;color:var(--muted);line-height:1.6}.legend{margin-top:14px;padding:16px 18px;background:#101a23;border:1px solid var(--line);border-radius:11px}.legendhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}.legendhead h2{font-size:14px;letter-spacing:.06em;margin:0;text-transform:uppercase}.legendgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}.legenditem{display:flex;align-items:center;gap:10px;min-height:54px;padding:10px;border:1px solid #314753;background:#172731;border-radius:8px}.swatch{width:17px;height:17px;flex:0 0 17px;border-radius:5px}.legendname{font-size:12px;font-weight:1000;color:#f5f8fa}.legenddesc{display:block;margin-top:3px;font-size:10px;color:#afc0c9;line-height:1.3}.notice{margin-top:12px;font-size:11px;line-height:1.55;color:#aebec8;background:#151f27;border-left:3px solid var(--yellow);border-radius:5px;padding:11px 13px}.forecast{margin-top:14px}.forecast iframe{width:100%;height:720px;border:0;display:block;background:#07111a}.forecastnote{font-size:11px;line-height:1.55;color:#b8c7cf;padding:12px 15px;background:#101a23;border-top:1px solid var(--line)}.city-label{background:#07121bd9;border:1px solid #e4edf2;color:#fff;border-radius:5px;padding:3px 6px;font-weight:900;font-size:12px;white-space:nowrap;box-shadow:0 2px 8px #000b}.city-dot{width:8px;height:8px;background:#fff;border:2px solid #07121b;border-radius:50%;box-shadow:0 0 0 2px #fff8}.leaflet-control-attribution{font-size:9px!important}.footer{text-align:center;color:#718490;font-size:10px;padding:17px 0 0}
+@media(max-width:1100px){.layout{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr}#map{height:590px}.legendgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.shell{width:calc(100% - 14px);padding-top:7px}.header{padding:12px;align-items:flex-start}.brand{gap:9px}.brandmark{font-size:17px;padding:9px}.clock{font-size:9px}.clock strong{font-size:12px}.toolbar .state{width:100%;padding:2px 0 6px}.btn,select{flex:1;padding:10px 7px;font-size:10px}.side{display:flex}#map{height:510px}.legendgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.legenditem{padding:8px;gap:7px}.legendname{font-size:11px}.forecast iframe{height:650px}}
+</style></head>
+<body><div class="shell">
+<header class="header"><div class="brand"><div class="brandmark">446</div><div><div class="brandname">446dx.pl</div><div class="subtitle">AKTUALNE WARUNKI PROPAGACYJNE</div></div></div><div class="clock"><span id="date">Ładowanie daty…</span><strong id="time">--:-- · CZAS POLSKI</strong></div></header>
+<div class="toolbar"><div class="state"><span class="dot"></span><span id="status">Mapa Polski · kliknij wybrane miejsce, aby wyznaczyć obszar</span></div><button class="btn primary" id="gps">⌖ MOJA LOKALIZACJA</button><button class="btn" id="whole">CAŁA POLSKA</button><label for="radius" style="font-size:11px;font-weight:900;color:#c9d7de">PROMIEŃ</label><select id="radius"><option>50</option><option>100</option><option>150</option><option selected>200</option><option>250</option><option>300</option></select><span style="font-size:11px;color:#b7c7d0;font-weight:800">km</span></div>
+<main class="layout"><section class="card"><div class="cardhead"><h2>Interaktywna mapa satelitarna Polski</h2><span class="tag">KLIKNIJ DOWOLNY PUNKT</span></div><div id="map"></div><div class="mapfoot"><span><strong id="mapselection">Nie wybrano obszaru</strong></span><span>Przybliżaj kółkiem myszy · przeciągaj mapę · kliknij, aby wybrać środek promienia</span></div></section>
+<aside class="side"><section class="sidecard"><h3>WYBRANY OBSZAR</h3><div class="selected" id="place">Kliknij mapę</div><div class="coords" id="coordstext">Wskaż np. Gdynię, Elbląg, Warszawę lub dowolne miejsce w Polsce.</div><div style="margin:13px 0"><span class="radiusbadge">◎ OBSZAR ANALIZY · <span id="radiuslabel">200</span> KM</span></div><div class="metric"><span>Powierzchnia koła</span><strong id="area">125 664 km²</strong></div><div class="metric"><span>Środek analizy</span><strong id="centerlabel">—</strong></div><h3 style="margin:16px 0 7px">MIASTA W ZASIĘGU</h3><div class="citylist" id="nearby"><span class="citychip">Wybierz punkt na mapie</span></div></section>
+<section class="sidecard"><h3>JAK ODCZYTAĆ WARUNKI</h3><div class="instructions">Po wskazaniu miejsca zaznaczam na mapie okrąg o wybranym promieniu. Dokładny wskaźnik obszarowy i jego przebieg w czasie odczytaj w panelu prognozy Tropocast poniżej, wybierając ten sam punkt i promień <b>200 km</b>.</div><div style="margin-top:14px"><a class="btn primary" style="display:block;text-align:center" href="https://tropocast.eu/map?lang=pl" target="_blank" rel="noopener">OTWÓRZ PROGNOZĘ TROPOCAST ↗</a></div><div class="notice">Wskaźnik Tropocast oznacza modelowany potencjał propagacji VHF/UHF, a nie gwarantowany zasięg ani bilans łącza. Model nie podaje oddzielnego, skalibrowanego wyniku dla 144 i 433 MHz.</div></section></aside></main>
+<section class="legend"><div class="legendhead"><h2>Legenda warunków propagacyjnych</h2><span class="tag">POTENCJAŁ MODELOWY VHF / UHF</span></div><div class="legendgrid">
+<div class="legenditem"><i class="swatch" style="background:#64748b"></i><div><span class="legendname">Brak / poniżej progu</span><span class="legenddesc">Brak istotnego sygnału modelowego</span></div></div>
+<div class="legenditem"><i class="swatch" style="background:#4774df"></i><div><span class="legendname">Słaby</span><span class="legenddesc">Marginalne polepszenie warunków</span></div></div>
+<div class="legenditem"><i class="swatch" style="background:#26b6cb"></i><div><span class="legendname">Umiarkowany</span><span class="legenddesc">Możliwe lepsze łączności lokalne</span></div></div>
+<div class="legenditem"><i class="swatch" style="background:#38b66b"></i><div><span class="legendname">Dobry</span><span class="legenddesc">Podwyższony potencjał propagacji</span></div></div>
+<div class="legenditem"><i class="swatch" style="background:#f0c632"></i><div><span class="legendname">Silny</span><span class="legenddesc">Sprzyjające dalekim łącznościom</span></div></div>
+<div class="legenditem"><i class="swatch" style="background:#f27632"></i><div><span class="legendname">Bardzo silny</span><span class="legenddesc">Silne lub wyjątkowe polepszenie</span></div></div></div><div class="notice">Kolory i klasy opisują potencjał atmosferyczny modelowany przez Tropocast. To nie są pomiary z odbiorników ani gwarancja łączności. Rzeczywisty wynik zależy m.in. od wysokości i charakterystyki anten, mocy, polaryzacji oraz ukształtowania terenu.</div></section>
+<section class="card forecast"><div class="cardhead"><h2>Szczegółowa prognoza obszarowa · Tropocast</h2><span class="tag">DO 72 GODZIN</span></div><iframe id="tropoFrame" src="https://tropocast.eu/map?lang=pl" title="Interaktywna prognoza Tropocast" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe><div class="forecastnote">W celu uzyskania obliczeń dla zaznaczonego obszaru kliknij „Wskaż na mapie” w Tropocast, wybierz ten sam środek i ustaw promień 200 km. Przeglądarka ze względów bezpieczeństwa nie pozwala tej stronie automatycznie przekazać kliknięcia do mapy innego serwisu.</div></section>
+<div class="footer">446dx.pl · Dane prognozy: Tropocast · Mapa satelitarna: Esri · Etykiety i dane geograficzne OpenStreetMap</div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script>
-(function () {
-    const map = L.map('satelliteMap', { scrollWheelZoom: true }).setView([52.05, 19.25], 6);
-    const imagery = L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        { maxZoom: 19, attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community' }
-    ).addTo(map);
-    const labels = L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-        { maxZoom: 19, attribution: '' }
-    ).addTo(map);
-    const streets = L.tileLayer(
-        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        { maxZoom: 19, attribution: '© OpenStreetMap contributors' }
-    );
-    L.control.layers(
-        { 'Satelita': imagery, 'Mapa drogowa': streets },
-        { 'Nazwy miejscowości i granice': labels },
-        { collapsed: true }
-    ).addTo(map);
-    L.control.scale({ metric: true, imperial: false }).addTo(map);
-
-    const polandBounds = L.latLngBounds([[49.0, 14.0], [54.9, 24.3]]);
-    let userMarker = null;
-    let userCircle = null;
-
-    const status = document.getElementById('locationStatus');
-    const coords = document.getElementById('coords');
-
-    function showPosition(position) {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-        const accuracy = Math.max(50, Math.round(position.coords.accuracy || 100));
-        const point = [lat, lon];
-
-        if (userMarker) map.removeLayer(userMarker);
-        if (userCircle) map.removeLayer(userCircle);
-
-        userMarker = L.marker(point).addTo(map);
-        userMarker.bindPopup('<div class="loc-popup">Twoja lokalizacja<br>' +
-            lat.toFixed(5) + ', ' + lon.toFixed(5) +
-            '<br>Dokładność GPS: około ' + accuracy + ' m</div>').openPopup();
-        userCircle = L.circle(point, {
-            radius: accuracy,
-            color: '#22c55e',
-            weight: 2,
-            fillColor: '#22c55e',
-            fillOpacity: 0.13
-        }).addTo(map);
-
-        map.setView(point, 10, { animate: true });
-        coords.textContent = 'GPS: ' + lat.toFixed(5) + '°N · ' + lon.toFixed(5) + '°E';
-        status.textContent = 'Lokalizacja wykryta · mapa przybliżona do Twojego regionu';
-    }
-
-    function showLocationError(error) {
-        const messages = {
-            1: 'Brak zgody na lokalizację · mapa pokazuje całą Polskę',
-            2: 'Pozycja niedostępna · sprawdź GPS lub ustawienia urządzenia',
-            3: 'Przekroczono czas oczekiwania · kliknij „Wykryj moją lokalizację”'
-        };
-        status.textContent = messages[error && error.code] || 'Nie udało się wykryć lokalizacji';
-        coords.textContent = 'Pozycja: nieustalona';
-    }
-
-    function locate() {
-        if (!('geolocation' in navigator)) {
-            status.textContent = 'Ta przeglądarka nie obsługuje geolokalizacji';
-            return;
-        }
-        status.textContent = 'Oczekiwanie na zgodę i odczyt GPS…';
-        navigator.geolocation.getCurrentPosition(
-            showPosition,
-            showLocationError,
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 120000 }
-        );
-    }
-
-    function updateClock() {
-        const now = new Date();
-        const date = new Intl.DateTimeFormat('pl-PL', {
-            timeZone: 'Europe/Warsaw',
-            weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
-        }).format(now);
-        const time = new Intl.DateTimeFormat('pl-PL', {
-            timeZone: 'Europe/Warsaw', hour: '2-digit', minute: '2-digit', second: '2-digit'
-        }).format(now);
-        document.getElementById('dateText').textContent = date.toUpperCase();
-        document.getElementById('timeText').textContent = time + ' CET/CEST · CZAS POLSKI';
-    }
-
-    document.getElementById('locateBtn').addEventListener('click', locate);
-    document.getElementById('polandBtn').addEventListener('click', function () {
-        map.fitBounds(polandBounds, { padding: [14, 14] });
-        status.textContent = 'Widok całej Polski';
-    });
-    document.getElementById('refreshBtn').addEventListener('click', function () {
-        const frame = document.getElementById('forecastFrame');
-        frame.src = frame.src;
-        status.textContent = 'Odświeżono osadzoną mapę prognozy Tropocast';
-    });
-
-    updateClock();
-    window.setInterval(updateClock, 1000);
-    map.fitBounds(polandBounds, { padding: [12, 12] });
-
-    // Próba lokalizacji po wejściu na stronę — przeglądarka zapyta o zgodę.
-    locate();
+(()=>{const cities=[['Szczecin',53.4285,14.5528],['Koszalin',54.1944,16.1722],['Słupsk',54.4641,17.0287],['Gdańsk',54.3520,18.6466],['Gdynia',54.5189,18.5305],['Elbląg',54.1522,19.4040],['Olsztyn',53.7784,20.4801],['Białystok',53.1325,23.1688],['Bydgoszcz',53.1235,18.0084],['Toruń',53.0138,18.5984],['Poznań',52.4064,16.9252],['Gorzów Wlkp.',52.7368,15.2288],['Zielona Góra',51.9356,15.5062],['Warszawa',52.2297,21.0122],['Płock',52.5468,19.7064],['Łódź',51.7592,19.4550],['Lublin',51.2465,22.5684],['Wrocław',51.1079,17.0385],['Opole',50.6751,17.9213],['Katowice',50.2649,19.0238],['Kielce',50.8661,20.6286],['Kraków',50.0647,19.9450],['Rzeszów',50.0412,21.9991],['Częstochowa',50.8118,19.1203],['Radom',51.4027,21.1471],['Zakopane',49.2992,19.9496]];
+const bounds=L.latLngBounds([[49,14],[54.9,24.3]]),map=L.map('map',{scrollWheelZoom:true}).setView([52.05,19.25],6);
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'}).addTo(map);
+const labels=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19}).addTo(map);
+const roads=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,opacity:.8}).addTo(map);
+L.control.layers({'Satelita':sat,'Mapa drogowa':L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19})},{'Nazwy miejscowości i granice':labels,'Drogi':roads},{collapsed:true}).addTo(map);L.control.scale({metric:true,imperial:false}).addTo(map);
+const layer=L.layerGroup().addTo(map);cities.forEach(([n,lat,lon])=>{const major=['Warszawa','Kraków','Wrocław','Poznań','Gdańsk','Gdynia','Szczecin','Łódź','Katowice','Lublin','Białystok','Olsztyn'].includes(n);const m=L.marker([lat,lon],{icon:L.divIcon({className:'',html:'<span class="city-dot" style="display:block"></span>',iconSize:[9,9],iconAnchor:[4,4]})}).addTo(layer);if(major)m.bindTooltip(n,{permanent:true,direction:'right',offset:[5,-2],className:'city-label'});else m.bindTooltip(n,{direction:'top'});});
+let selected=null,ring=null,marker=null;const $=id=>document.getElementById(id),radius=()=>Number($('radius').value),rad=v=>v*Math.PI/180;
+function distance(a,b){const R=6371,d1=rad(b[0]-a[0]),d2=rad(b[1]-a[1]),x=Math.sin(d1/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(d2/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
+function nearest(lat,lon){let best='Wybrany punkt',dmin=1e9;cities.forEach(c=>{const d=distance([lat,lon],[c[1],c[2]]);if(d<dmin){dmin=d;best=c[0];}});return dmin<30?best:'Wybrany punkt';}
+function choose(lat,lon,zoom=true){selected=[lat,lon];const r=radius(),name=nearest(lat,lon);if(ring)map.removeLayer(ring);if(marker)map.removeLayer(marker);ring=L.circle(selected,{radius:r*1000,color:'#65f3a0',weight:3,opacity:.95,fillColor:'#22c55e',fillOpacity:.12,dashArray:'8 6'}).addTo(map);marker=L.marker(selected).addTo(map).bindPopup('<b>'+name+'</b><br>Promień analizy: '+r+' km<br>'+lat.toFixed(4)+', '+lon.toFixed(4)).openPopup();if(zoom)map.fitBounds(ring.getBounds(),{padding:[32,32],maxZoom:8});$('place').textContent=name;$('coordstext').textContent=lat.toFixed(5)+'°N · '+lon.toFixed(5)+'°E';$('radiuslabel').textContent=r;$('area').textContent=Math.round(Math.PI*r*r).toLocaleString('pl-PL')+' km²';$('centerlabel').textContent=lat.toFixed(2)+' / '+lon.toFixed(2);$('mapselection').textContent=name+' · promień '+r+' km';$('status').textContent='Wybrano obszar analizy · '+name;const near=cities.map(c=>({name:c[0],d:distance(selected,[c[1],c[2]])})).filter(c=>c.d<=r).sort((a,b)=>a.d-b.d).slice(0,12);$('nearby').innerHTML=near.map(c=>'<span class="citychip">'+c.name+' · '+Math.round(c.d)+' km</span>').join('')||'<span class="citychip">Brak dużych miast w promieniu</span>';}
+map.on('click',e=>choose(e.latlng.lat,e.latlng.lng));$('radius').addEventListener('change',()=>{if(selected)choose(selected[0],selected[1],false);});$('whole').addEventListener('click',()=>{map.fitBounds(bounds,{padding:[12,12]});$('status').textContent='Widok całej Polski';});$('gps').addEventListener('click',()=>{if(!navigator.geolocation){$('status').textContent='Geolokalizacja niedostępna';return;}$('status').textContent='Oczekiwanie na zgodę lokalizacji…';navigator.geolocation.getCurrentPosition(p=>{choose(p.coords.latitude,p.coords.longitude);$('status').textContent='Wykryto lokalizację GPS · obszar '+radius()+' km';},e=>{$('status').textContent=e.code===1?'Brak zgody na lokalizację':'Nie udało się wykryć lokalizacji';},{enableHighAccuracy:true,timeout:15000,maximumAge:120000});});
+function clock(){const n=new Date();$('date').textContent=new Intl.DateTimeFormat('pl-PL',{timeZone:'Europe/Warsaw',weekday:'long',day:'2-digit',month:'long',year:'numeric'}).format(n).toUpperCase();$('time').textContent=new Intl.DateTimeFormat('pl-PL',{timeZone:'Europe/Warsaw',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(n)+' · CZAS POLSKI';}clock();setInterval(clock,1000);map.fitBounds(bounds,{padding:[14,14]});
 })();
-</script>
-</body>
-</html>
+</script></body></html>
