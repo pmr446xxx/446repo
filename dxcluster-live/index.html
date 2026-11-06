@@ -168,12 +168,18 @@
     });
     const unique = [];
     for (const spot of all) {
-      const duplicate = unique.some(old =>
+      const sameSignal = old =>
         old.dx === spot.dx &&
         Math.abs(old.frequency - spot.frequency) <= 1 &&
-        Math.abs(old.time - spot.time) <= 180000 &&
-        (old.source === spot.source || (old.source === 'HamQTH DX' && spot.source === 'RBN'))
-      );
+        Math.abs(old.time - spot.time) <= 180000;
+      const duplicate = unique.some(old => sameSignal(old) && (
+        // Do not discard different human spotters in the DX cluster.
+        (old.source === 'HamQTH DX' && spot.source === 'HamQTH DX' && old.spotter === spot.spotter) ||
+        // RBN is one aggregated signal; suppress it when the same signal is already in DXC.
+        (old.source === 'HamQTH DX' && spot.source === 'RBN') ||
+        // Two RBN refresh records for the same signal are one row.
+        (old.source === 'RBN' && spot.source === 'RBN')
+      ));
       if (!duplicate) unique.push(spot);
     }
     state.spots = unique.sort((a,b) => b.time-a.time).slice(0,700);
