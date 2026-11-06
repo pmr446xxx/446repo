@@ -35,31 +35,29 @@
   <div class="notice" id="notice" role="status"></div>
   <div class="table-scroll"><table><thead><tr><th>UTC</th><th>MHz</th><th>PASMO</th><th>MODE</th><th>STACJA DX</th><th>SPOTTER</th><th>KOMENTARZ</th></tr></thead><tbody id="rows"><tr><td class="empty" colspan="7">Pobieranie prawdziwych spotów. Nie wyświetlamy danych demonstracyjnych.</td></tr></tbody></table></div>
 </section>
-<footer class="footer"><span><b>CLUSTER BY KALBAR / ML5403</b></span><span class="source-credit">Źródła LIVE: HamQTH DX Cluster · Reverse Beacon Network</span><span id="pollInfo">Automatyczne odświeżanie co 15 s</span></footer>
-<footer class="footer source-links"><span>Źródła danych: <a href="https://www.hamqth.com/developers" target="_blank" rel="noopener">HamQTH API</a> · <span class="yellow">SSB*</span> = tryb oszacowany z częstotliwości, gdy API nie podało emisji</span><span id="sourceUsed">Oczekiwanie na feed…</span></footer>
+<footer class="footer"><span><b>CLUSTER BY KALBAR / ML5403</b></span><span class="source-credit">Źródła LIVE: DXconditions DX Cluster · HamQTH Reverse Beacon Network</span><span id="pollInfo">Automatyczne odświeżanie co 60 s</span></footer>
+<footer class="footer source-links"><span>Źródła danych: <a href="https://dxconditions.live/cluster/" target="_blank" rel="noopener">DXconditions LIVE</a> · <a href="https://www.hamqth.com/developers" target="_blank" rel="noopener">HamQTH RBN</a></span><span id="sourceUsed">Oczekiwanie na feed…</span></footer>
 </main>
 <script>
 'use strict';
 (() => {
   const $ = id => document.getElementById(id);
-  // Public HamQTH API v2: no login, CORS enabled for browser clients.
   const URLS = {
-    hamDx: {
-      CW: 'https://www.hamqth.com/api/v2/spots?modes=CW&limit=200',
-      SSB: 'https://www.hamqth.com/api/v2/spots?modes=SSB&limit=200',
-      DIGI: 'https://www.hamqth.com/api/v2/spots?modes=DIGI&limit=200'
-    },
+    dx: 'https://api.dxconditions.live/cluster/spots.json',
     rbn: 'https://www.hamqth.com/api/v2/rbn?maxAge=1800&sort=age'
   };
-  // HamQTH asks clients not to poll more often than every 15 seconds.
-  // DX Cluster spot counts by mode are fetched independently: the API limit is 200 per request.
-  const POLL_MS = 15000;
-  const TIMEOUT_MS = 12000;
+  // DXconditions caches the 1,000 newest cluster spots for approximately 60 seconds.
+  const POLL_MS = 60000;
+  const TIMEOUT_MS = 15000;
   const state = { spots: [], feeds: {}, busy: false, band: 'ALL', mode: 'ALL', query: '' };
 
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const normCall = value => String(value || '').trim().toUpperCase();
-  const parseTime = value => { const ms = typeof value === 'number' ? value : Date.parse(value); return Number.isFinite(ms) ? ms : Date.now(); };
+  const parseTime = value => {
+    if (typeof value === 'number') return Number.isFinite(value) ? (value < 1e12 ? value * 1000 : value) : Date.now();
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : Date.now();
+  };
   const bandFromFreq = khz => {
     const f = Number(khz);
     if (!Number.isFinite(f) || f <= 0) return '—';
@@ -76,198 +74,197 @@
     if (/^\d+(?:\.\d+)?m$/.test(value)) return value;
     return value;
   };
+  function normalizeMode(raw, comment) {
+    let value = String(raw ?? '').trim().toUpperCase();
+    if (!value) {
+      const note = String(comment || '').toUpperCase();
+      if (/\b(SSB|USB|LSB|PHONE)\b/.test(note)) value = 'SSB';
+      else if (/\b(FT8|FT4|RTTY|PSK|JT65|JT9|WSPR|JS8|OLIVIA|DIGI)\b/.test(note)) value = 'DIGI';
+      else if (/\b(CW|MORSE)\b/.test(note)) value = 'CW';
+    }
+    if (value === 'PHONE' || value === 'USB' || value === 'LSB') return 'SSB';
+    if (/^(FT8|FT4|RTTY|PSK|JT65|JT9|WSPR|JS8|OLIVIA|DIGI)/.test(value)) return value;
+    return value || '—';
+  }
   const modeGroup = mode => {
     const m = String(mode || '').toUpperCase();
-    if (m.includes('CW')) return 'CW';
-    if (/FT8|FT4|RTTY|PSK|JT65|JT9|MSK|JS8|OLIVIA|DIGI|DATA/.test(m)) return 'DIGI';
-    if (/SSB|USB|LSB|PHONE|AM|FM/.test(m)) return 'SSB';
+    if (m === 'CW') return 'CW';
+    if (/FT8|FT4|RTTY|PSK|JT65|JT9|MSK|JS8|OLIVIA|DIGI|DATA|WSPR/.test(m)) return 'DIGI';
+    if (/^(SSB|USB|LSB|PHONE|AM|FM)$/.test(m)) return 'SSB';
     return 'OTHER';
   };
-  // HamQTH documents that mode=null spots pass every modes filter.
-  // Infer only the preferred PHONE/SSB segments for IARU Region 1 when
-  // the source did not provide a mode; keep the inferred flag visible.
-  function inferModeFromFrequency(freqKHz, comment) {
-    const note = String(comment || '').toUpperCase();
-    if (/\\b(SSB|USB|LSB|PHONE)\\b/.test(note)) return 'SSB';
-    if (/\\b(CW|MORSE)\\b/.test(note)) return 'CW';
-    if (/\\b(FT8|FT4|RTTY|PSK|JT65|JT9|WSPR|JS8|OLIVIA)\\b/.test(note)) return 'DIGI';
-    const f = Number(freqKHz);
-    const ssbSegments = [
-      [1840,2000], [3600,3800], [5351.5,5366.5], [7075,7200],
-      [14125,14350], [18111,18168], [21151,21450], [24931,24990],
-      [28300,29300], [50100,51000], [144150,144400], [432100,432400]
-    ];
-    return ssbSegments.some(([low,high]) => f >= low && f <= high) ? 'SSB' : null;
+  function extractRows(payload) {
+    if (Array.isArray(payload)) return payload;
+    for (const key of ['spots','data','items','results','cluster']) {
+      if (Array.isArray(payload?.[key])) return payload[key];
+      if (Array.isArray(payload?.[key]?.spots)) return payload[key].spots;
+    }
+    throw new Error('Nieprawidłowy format API — nie znaleziono tablicy spotów.');
   }
-  function normalizeHamDx(data) {
-    if (!data || !Array.isArray(data.spots)) throw new Error('HamQTH DX: nieprawidłowy format (brak tablicy spots).');
-    return data.spots.map(s => {
-      const frequency = Number(s?.freq), dx = normCall(s?.dxcall), spotter = normCall(s?.spotter);
+  function normalizeDxConditions(payload) {
+    return extractRows(payload).map(s => {
+      const frequency = Number(s?.frequency ?? s?.freq);
+      const dx = normCall(s?.spotted ?? s?.dxcall ?? s?.dxCall);
+      const spotter = normCall(s?.spotter);
       if (!(frequency > 0) || !dx || !spotter) return null;
-      const comment = String(s?.comment || '').slice(0,180);
-      const missingMode = s?.mode == null || String(s.mode).trim() === '';
-      const inferredMode = missingMode ? inferModeFromFrequency(frequency, comment) : null;
-      const rawMode = missingMode ? (inferredMode || '—') : String(s.mode).trim().toUpperCase();
-      const mode = rawMode === 'PHONE' ? 'SSB' : rawMode;
-      return { dx, spotter, frequency, band: normalizeBand(s?.band, frequency), mode, modeInferred:!!inferredMode, group: modeGroup(mode), message: comment, time: parseTime(s?.time), source: 'HamQTH DX' };
+      const message = String(s?.message ?? s?.comment ?? '').slice(0,180);
+      const mode = normalizeMode(s?.add?.mode ?? s?.mode ?? s?.submode, message);
+      return {
+        dx, spotter, frequency,
+        band: normalizeBand(s?.add?.band ?? s?.band, frequency),
+        mode, group: modeGroup(mode),
+        message, time: parseTime(s?.when ?? s?.time ?? s?.timestamp),
+        source: 'DXconditions'
+      };
     }).filter(Boolean);
   }
-  function normalizeRbn(data) {
-    if (!data || !Array.isArray(data.spots)) throw new Error('HamQTH RBN: nieprawidłowy format (brak tablicy spots).');
-    const out = [];
-    for (const s of data.spots) {
-      const frequency = Number(s?.freq), dx = normCall(s?.dxcall);
+  function normalizeRbn(payload) {
+    const output = [];
+    for (const s of extractRows(payload)) {
+      const frequency = Number(s?.freq ?? s?.frequency);
+      const dx = normCall(s?.dxcall ?? s?.spotted);
       if (!(frequency > 0) || !dx) continue;
-      const mode = String(s?.mode || 'CW').toUpperCase();
+      const mode = normalizeMode(s?.mode, s?.comment ?? s?.message);
       const age = Math.max(0, Number(s?.age) || 0);
       const skimmers = (Array.isArray(s?.skimmers) ? s.skimmers : [])
-        .map(item => ({ call: normCall(item?.call), snr: Number(item?.snr) }))
+        .map(item => ({ call:normCall(item?.call), snr:Number(item?.snr) }))
         .filter(item => item.call)
-        .sort((a,b) => (Number.isFinite(b.snr) ? b.snr : -999) - (Number.isFinite(a.snr) ? a.snr : -999));
+        .sort((a,b) => (Number.isFinite(b.snr)?b.snr:-999) - (Number.isFinite(a.snr)?a.snr:-999));
       if (!skimmers.length) continue;
-      const best = skimmers[0];
-      const receivers = skimmers.slice(0,4).map(item => `${item.call}${Number.isFinite(item.snr) ? ` ${item.snr > 0 ? '+' : ''}${item.snr}dB` : ''}`).join(' · ');
-      const extra = skimmers.length > 4 ? ` · +${skimmers.length-4} kolejnych` : '';
-      out.push({
-        dx, spotter: skimmers.length === 1 ? best.call : `RBN ×${skimmers.length}`,
-        frequency, band: normalizeBand(s?.band, frequency), mode, group: modeGroup(mode),
-        message: `${receivers}${extra}`,
-        time: Date.now() - age * 1000, source: 'RBN'
+      const receivers = skimmers.slice(0,4)
+        .map(item => `${item.call}${Number.isFinite(item.snr)?` ${item.snr>0?'+':''}${item.snr}dB`:''}`)
+        .join(' · ');
+      const extra = skimmers.length>4 ? ` · +${skimmers.length-4} kolejnych` : '';
+      output.push({
+        dx, spotter:skimmers.length===1?skimmers[0].call:`RBN ×${skimmers.length}`,
+        frequency, band:normalizeBand(s?.band,frequency), mode, group:modeGroup(mode),
+        message:receivers+extra, time:Date.now()-age*1000, source:'RBN'
       });
     }
-    return out;
+    return output;
   }
   async function getJson(url) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),TIMEOUT_MS);
     try {
-      const response = await fetch(url, { method:'GET', mode:'cors', credentials:'omit', cache:'no-store', headers:{ Accept:'application/json' }, signal:controller.signal });
-      if (!response.ok) {
-        let detail = '';
-        try { const body = await response.json(); detail = body?.detail || body?.title || ''; } catch (_) {}
-        throw new Error(detail ? `HTTP ${response.status}: ${detail}` : `HTTP ${response.status}`);
+      const response=await fetch(url,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',headers:{Accept:'application/json'},signal:controller.signal});
+      if(!response.ok) {
+        let detail='';
+        try { const body=await response.json(); detail=body?.detail||body?.message||body?.title||''; } catch(_) {}
+        throw new Error(detail?`HTTP ${response.status}: ${detail}`:`HTTP ${response.status}`);
       }
       return await response.json();
-    } catch (error) {
-      if (error?.name === 'AbortError') throw new Error('przekroczono limit czasu 12 s');
-      if (error instanceof TypeError && /fetch/i.test(error.message)) throw new Error('przeglądarka odrzuciła połączenie (sieć lub CORS)');
+    } catch(error) {
+      if(error?.name==='AbortError') throw new Error('Przekroczono limit czasu 15 s.');
+      if(error instanceof TypeError) throw new Error('Przeglądarka zablokowała połączenie z API (sieć/CORS).');
       throw error;
     } finally { clearTimeout(timer); }
   }
-  async function fetchDxFeed() {
-    const modes = Object.keys(URLS.hamDx);
-    const results = await Promise.allSettled(modes.map(async mode => ({
-      mode, items: normalizeHamDx(await getJson(URLS.hamDx[mode]))
-    })));
-    const items = [];
-    let ok = 0;
-    const failures = [];
-    for (let i=0; i<results.length; i++) {
-      const result = results[i];
-      const mode = modes[i];
-      if (result.status === 'fulfilled') {
-        ok++;
-        items.push(...result.value.items);
-        state.feeds['dx'+mode] = { ok:true, name:'DX '+mode, at:Date.now(), count:result.value.items.length };
-      } else {
-        const error = result.reason?.message || String(result.reason);
-        failures.push(mode+': '+error);
-        state.feeds['dx'+mode] = { ok:false, error:'HamQTH '+mode+': '+error };
-      }
-    }
-    state.feeds.dx = { ok:ok>0, partial:ok>0 && ok<modes.length, name:'HamQTH DX Cluster', at:ok?Date.now():0, count:items.length, failures };
-    return items;
-  }
-  function merge(dxItems, rbnItems) {
-    // Keep every real DX-cluster report. RBN is already aggregated to one row per
-    // signal (its skimmers are shown together), not one duplicate row per receiver.
-    const all = [...dxItems, ...rbnItems].sort((a,b) => {
-      if (a.source !== b.source) return a.source === 'HamQTH DX' ? -1 : 1;
-      return b.time - a.time;
+  function merge(dxItems,rbnItems) {
+    const all=[...dxItems,...rbnItems].sort((a,b)=>{
+      if(a.source!==b.source) return a.source==='DXconditions'?-1:1;
+      return b.time-a.time;
     });
-    const unique = [];
-    for (const spot of all) {
-      const sameSignal = old =>
-        old.dx === spot.dx &&
-        Math.abs(old.frequency - spot.frequency) <= 1 &&
-        Math.abs(old.time - spot.time) <= 180000;
-      const duplicate = unique.some(old => sameSignal(old) && (
-        // Do not discard different human spotters in the DX cluster.
-        (old.source === 'HamQTH DX' && spot.source === 'HamQTH DX' && old.spotter === spot.spotter) ||
-        // RBN is one aggregated signal; suppress it when the same signal is already in DXC.
-        (old.source === 'HamQTH DX' && spot.source === 'RBN') ||
-        // Two RBN refresh records for the same signal are one row.
-        (old.source === 'RBN' && spot.source === 'RBN')
+    const unique=[];
+    for(const spot of all) {
+      const sameSignal=old=>old.dx===spot.dx && Math.abs(old.frequency-spot.frequency)<=1 && Math.abs(old.time-spot.time)<=180000;
+      const duplicate=unique.some(old=>sameSignal(old) && (
+        (old.source==='DXconditions' && spot.source==='DXconditions' && old.spotter===spot.spotter) ||
+        (old.source==='DXconditions' && spot.source==='RBN') ||
+        (old.source==='RBN' && spot.source==='RBN')
       ));
-      if (!duplicate) unique.push(spot);
+      if(!duplicate) unique.push(spot);
     }
-    state.spots = unique.sort((a,b) => b.time-a.time).slice(0,700);
+    state.spots=unique.sort((a,b)=>b.time-a.time).slice(0,1200);
   }
   function filtered() {
-    return state.spots.filter(s => (state.band === 'ALL' || s.band === state.band) && (state.mode === 'ALL' || s.group === state.mode) && (!state.query || `${s.dx} ${s.spotter} ${s.band} ${s.frequency} ${s.mode} ${s.message}`.toUpperCase().includes(state.query)));
+    return state.spots.filter(s=>
+      (state.band==='ALL'||s.band===state.band) &&
+      (state.mode==='ALL'||s.group===state.mode) &&
+      (!state.query||`${s.dx} ${s.spotter} ${s.band} ${s.frequency} ${s.mode} ${s.message}`.toUpperCase().includes(state.query))
+    );
   }
-  function modeClass(group) { return group === 'CW' ? 'mode-cw' : group === 'SSB' ? 'mode-ssb' : group === 'DIGI' ? 'mode-digi' : 'mode-other'; }
+  function modeClass(group) { return group==='CW'?'mode-cw':group==='SSB'?'mode-ssb':group==='DIGI'?'mode-digi':'mode-other'; }
   function render() {
-    const list = filtered();
-    $('totalSpots').textContent = list.length.toLocaleString('pl-PL');
-    const feedCount = key => state.feeds[key]?.ok ? state.feeds[key].count : '—';
-    $('spotsInfo').textContent = `${state.spots.length} unikalnych · DXC CW ${feedCount("dxCW")} / SSB ${feedCount("dxSSB")} / DIGI ${feedCount("dxDIGI")} · RBN ${feedCount("rbn")}`;
-    $('activeBands').textContent = new Set(list.map(s => s.band)).size;
-    $('uniqueDx').textContent = new Set(list.map(s => s.dx)).size;
-    $('count').textContent = `${list.length.toLocaleString('pl-PL')} SPOTÓW`;
-    if (!list.length) {
-      $('rows').innerHTML = `<tr><td class="empty" colspan="7">${state.feeds.dx?.ok || state.feeds.rbn?.ok ? 'Brak spotów dla wybranych filtrów.' : 'Brak danych z feedów. Sprawdź informację o połączeniu powyżej.'}</td></tr>`;
+    const list=filtered();
+    $('totalSpots').textContent=list.length.toLocaleString('pl-PL');
+    $('spotsInfo').textContent=`${state.spots.length} unikalnych raportów · DXconditions + RBN`;
+    $('activeBands').textContent=new Set(list.map(s=>s.band)).size;
+    $('uniqueDx').textContent=new Set(list.map(s=>s.dx)).size;
+    $('count').textContent=`${list.length.toLocaleString('pl-PL')} SPOTÓW`;
+    if(!list.length) {
+      const message=state.mode==='SSB'
+        ? 'W aktualnie pobranych danych nie ma spotów SSB dla wybranych filtrów.'
+        : (state.feeds.dx?.ok||state.feeds.rbn?.ok?'Brak spotów dla wybranych filtrów.':'Brak danych z feedów. Sprawdź komunikat powyżej.');
+      $('rows').innerHTML=`<tr><td class="empty" colspan="7">${message}</td></tr>`;
       return;
     }
-    $('rows').innerHTML = list.slice(0,350).map(s => `<tr><td class="time">${new Date(s.time).toISOString().slice(11,19)}</td><td class="frequency">${(s.frequency/1000).toFixed(3)}</td><td><span class="band">${esc(s.band.toUpperCase())}</span></td><td title="${s.modeInferred ? 'Tryb oszacowany z częstotliwości wg IARU Region 1' : 'Tryb odebrany ze źródła'}"><span class="mode ${modeClass(s.group)}">${esc(s.mode)}${s.modeInferred ? '*' : ''}</span></td><td><span class="callsign">${esc(s.dx)}</span></td><td><span class="spotter">${esc(s.spotter)}</span></td><td class="message" title="${esc(s.message)}">${esc(s.message || '—')}</td></tr>`).join('');
+    $('rows').innerHTML=list.slice(0,500).map(s=>
+      `<tr><td class="time">${new Date(s.time).toISOString().slice(11,19)}</td><td class="frequency">${(s.frequency/1000).toFixed(3)}</td><td><span class="band">${esc(s.band.toUpperCase())}</span></td><td><span class="mode ${modeClass(s.group)}">${esc(s.mode)}</span></td><td><span class="callsign">${esc(s.dx)}</span></td><td><span class="spotter">${esc(s.spotter)}</span></td><td class="message" title="${esc(s.message)}">${esc(s.message||'—')}</td></tr>`
+    ).join('');
   }
   function updateStatus() {
-    const dxOk = !!state.feeds.dx?.ok, rbnOk = !!state.feeds.rbn?.ok;
-    const anyOk = dxOk || rbnOk;
-    const dxComplete = dxOk && !state.feeds.dx?.partial;
-    $('led').className = 'led' + (anyOk ? (dxComplete && rbnOk ? '' : ' wait') : state.feeds.dx || state.feeds.rbn ? ' off' : ' wait');
-    $('statusText').textContent = dxComplete && rbnOk ? 'LIVE · DX + RBN' : dxOk ? (state.feeds.dx.partial ? 'LIVE · DX CZĘŚCIOWO' : 'LIVE · DX') : rbnOk ? 'LIVE · RBN' : state.feeds.dx || state.feeds.rbn ? 'BRAK POŁĄCZENIA' : 'ŁĄCZENIE Z FEEDAMI';
-    $('lastUpdated').textContent = anyOk ? `Ostatni poprawny odbiór: ${new Date(Math.max(state.feeds.dx?.at || 0,state.feeds.rbn?.at || 0)).toISOString().slice(11,19)} UTC · odświeżanie co 15 s` : 'Oczekiwanie na pierwsze dane z publicznych feedów…';
-    const problems = [];
-    for (const key of ['dxCW','dxSSB','dxDIGI']) if (state.feeds[key] && !state.feeds[key].ok) problems.push(state.feeds[key].error);
-    if (state.feeds.rbn && !rbnOk) problems.push(state.feeds.rbn.error);
-    $('notice').style.display = problems.length ? 'block' : 'none';
-    $('notice').textContent = problems.join(' · ');
-    const names = [];
-    if (dxOk) names.push(`DXC CW ${state.feeds.dxCW?.count ?? 0} · SSB ${state.feeds.dxSSB?.count ?? 0} · DIGI ${state.feeds.dxDIGI?.count ?? 0}`);
-    if (rbnOk) names.push(`RBN (${state.feeds.rbn.count} sygnałów; skimmery zgrupowane)`);
-    $('sourceUsed').textContent = names.length ? `Aktywne: ${names.join(' + ')}` : 'Żaden feed nie odpowiada';
+    const dxOk=!!state.feeds.dx?.ok, rbnOk=!!state.feeds.rbn?.ok, anyOk=dxOk||rbnOk;
+    $('led').className='led'+(anyOk?(dxOk&&rbnOk?'':' wait'):state.feeds.dx||state.feeds.rbn?' off':' wait');
+    $('statusText').textContent=dxOk&&rbnOk?'LIVE · DX + RBN':dxOk?'LIVE · DXCONDITIONS':rbnOk?'LIVE · RBN':state.feeds.dx||state.feeds.rbn?'BRAK POŁĄCZENIA':'ŁĄCZENIE Z FEEDAMI';
+    const times=[state.feeds.dx?.at||0,state.feeds.rbn?.at||0].filter(Boolean);
+    $('lastUpdated').textContent=times.length?`Ostatni poprawny odbiór: ${new Date(Math.max(...times)).toISOString().slice(11,19)} UTC · odświeżanie co 60 s`:'Oczekiwanie na pierwsze dane z publicznych feedów…';
+    const problems=[];
+    if(state.feeds.dx&&!dxOk) problems.push(state.feeds.dx.error);
+    if(state.feeds.rbn&&!rbnOk) problems.push(state.feeds.rbn.error);
+    $('notice').style.display=problems.length?'block':'none';
+    $('notice').textContent=problems.join(' · ');
+    const names=[];
+    if(dxOk) names.push(`DXconditions LIVE (${state.feeds.dx.count} spotów; SSB/CW/DIGI)`);
+    if(rbnOk) names.push(`HamQTH RBN (${state.feeds.rbn.count} sygnałów; skimmery zgrupowane)`);
+    $('sourceUsed').textContent=names.length?`Aktywne: ${names.join(' + ')}`:'Żaden feed nie odpowiada';
   }
   async function refreshAll() {
-    if (state.busy) return;
-    state.busy = true;
-    $('refresh').disabled = true;
-    $('refresh').textContent = 'POBIERANIE…';
+    if(state.busy) return;
+    state.busy=true;
+    $('refresh').disabled=true;
+    $('refresh').textContent='POBIERANIE…';
     try {
-      const [dxResult, rbnResult] = await Promise.allSettled([
-        fetchDxFeed(),
+      const [dxResult,rbnResult]=await Promise.allSettled([
+        getJson(URLS.dx).then(normalizeDxConditions),
         getJson(URLS.rbn).then(normalizeRbn)
       ]);
-      const dxItems = dxResult.status === 'fulfilled' ? dxResult.value : [];
-      if (rbnResult.status === 'fulfilled') state.feeds.rbn = { ok:true, name:'HamQTH RBN', at:Date.now(), count:rbnResult.value.length };
-      else state.feeds.rbn = { ok:false, error:`HamQTH RBN: ${rbnResult.reason?.message || rbnResult.reason}` };
-      merge(dxItems, rbnResult.status === 'fulfilled' ? rbnResult.value : []);
+      const dxItems=dxResult.status==='fulfilled'?dxResult.value:[];
+      if(dxResult.status==='fulfilled') state.feeds.dx={ok:true,name:'DXconditions',at:Date.now(),count:dxItems.length};
+      else state.feeds.dx={ok:false,error:`DXconditions: ${dxResult.reason?.message||dxResult.reason}`};
+      const rbnItems=rbnResult.status==='fulfilled'?rbnResult.value:[];
+      if(rbnResult.status==='fulfilled') state.feeds.rbn={ok:true,name:'HamQTH RBN',at:Date.now(),count:rbnItems.length};
+      else state.feeds.rbn={ok:false,error:`HamQTH RBN: ${rbnResult.reason?.message||rbnResult.reason}`};
+      merge(dxItems,rbnItems);
       updateStatus();
       render();
     } finally {
-      state.busy = false;
-      $('refresh').disabled = false;
-      $('refresh').textContent = '↻ ODŚWIEŻ';
+      state.busy=false;
+      $('refresh').disabled=false;
+      $('refresh').textContent='↻ ODŚWIEŻ';
     }
   }
-  document.querySelectorAll('[data-band]').forEach(button => button.addEventListener('click', () => { state.band=button.dataset.band; document.querySelectorAll('[data-band]').forEach(b=>b.classList.toggle('active',b===button)); render(); }));
-  document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => { state.mode=button.dataset.mode; document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===button)); render(); }));
-  $('search').addEventListener('input', e => { state.query=e.target.value.trim().toUpperCase(); render(); });
-  $('clear').addEventListener('click', () => { state.band='ALL'; state.mode='ALL'; state.query=''; $('search').value=''; document.querySelectorAll('[data-band]').forEach(b=>b.classList.toggle('active',b.dataset.band==='ALL')); document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode==='ALL')); render(); });
-  $('refresh').addEventListener('click', refreshAll);
-  const updateClock = () => { $('utc').textContent = `UTC ${new Date().toISOString().slice(11,19)}`; };
-  updateClock(); setInterval(updateClock,1000); render(); refreshAll();
-  setInterval(refreshAll,POLL_MS);
+  document.querySelectorAll('[data-band]').forEach(button=>button.addEventListener('click',()=>{
+    state.band=button.dataset.band;
+    document.querySelectorAll('[data-band]').forEach(item=>item.classList.toggle('active',item===button));
+    render();
+  }));
+  document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{
+    state.mode=button.dataset.mode;
+    document.querySelectorAll('[data-mode]').forEach(item=>item.classList.toggle('active',item===button));
+    render();
+  }));
+  $('search').addEventListener('input',event=>{state.query=event.target.value.trim().toUpperCase();render();});
+  $('clear').addEventListener('click',()=>{
+    state.band='ALL';state.mode='ALL';state.query='';$('search').value='';
+    document.querySelectorAll('[data-band]').forEach(item=>item.classList.toggle('active',item.dataset.band==='ALL'));
+    document.querySelectorAll('[data-mode]').forEach(item=>item.classList.toggle('active',item.dataset.mode==='ALL'));
+    render();
+  });
+  $('refresh').addEventListener('click',refreshAll);
+  const updateClock=()=>$('utc').textContent=`UTC ${new Date().toISOString().slice(11,19)}`;
+  updateClock();setInterval(updateClock,1000);
+  render();refreshAll();setInterval(refreshAll,POLL_MS);
 })();
 </script>
 </body>
