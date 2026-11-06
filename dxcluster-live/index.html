@@ -35,8 +35,8 @@
   <div class="notice" id="notice" role="status"></div>
   <div class="table-scroll"><table><thead><tr><th>UTC</th><th>MHz</th><th>PASMO</th><th>MODE</th><th>STACJA DX</th><th>SPOTTER</th><th>KOMENTARZ</th></tr></thead><tbody id="rows"><tr><td class="empty" colspan="7">Pobieranie prawdziwych spotów. Nie wyświetlamy danych demonstracyjnych.</td></tr></tbody></table></div>
 </section>
-<footer class="footer"><span><b>CLUSTER BY KALBAR / ML5403</b></span><span class="source-credit">Źródła LIVE: DX Summit · bezpośredni feed spotów</span><span id="pollInfo">Automatyczne odświeżanie co 60 s</span></footer>
-<footer class="footer source-links"><span>Źródła danych: <a href="https://www.dxsummit.fi/#/" target="_blank" rel="noopener">DX Summit LIVE</a> · <a href="https://www.dxsummit.fi/api/v1/spots" target="_blank" rel="noopener">DX Summit JSON API</a></span><span id="sourceUsed">Oczekiwanie na feed…</span></footer>
+<footer class="footer"><span><b>CLUSTER BY KALBAR / ML5403</b></span><span class="source-credit">Źródła LIVE: DX Summit · tryb z informacji spotu lub segmentu IARU Region 1</span><span id="pollInfo">Automatyczne odświeżanie co 60 s</span></footer>
+<footer class="footer source-links"><span>Źródła danych: <a href="https://www.dxsummit.fi/#/" target="_blank" rel="noopener">DX Summit LIVE</a> · <a href="https://www.dxsummit.fi/api/v1/spots" target="_blank" rel="noopener">DX Summit JSON API</a> · <a href="https://www.iaru-r1.org/on-the-air/band-plans/" target="_blank" rel="noopener">IARU Region 1 Bandplan</a></span><span id="sourceUsed">Oczekiwanie na feed…</span></footer>
 </main>
 <script>
 'use strict';
@@ -45,203 +45,146 @@
   const API = 'https://www.dxsummit.fi/api/v1/spots';
   const POLL_MS = 60000;
   const REQUEST_TIMEOUT_MS = 15000;
-  const state = { spots: [], busy: false, band: 'ALL', mode: 'ALL', query: '' };
-
-  const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-  const normCall = value => String(value || '').trim().toUpperCase();
-  const bandFromFreq = khz => {
-    const f = Number(khz);
-    if (!Number.isFinite(f) || f <= 0) return '—';
-    if (f < 2000) return '160m';
-    if (f < 4000) return '80m';
-    if (f < 6000) return '60m';
-    if (f < 8000) return '40m';
-    if (f < 11000) return '30m';
-    if (f < 15000) return '20m';
-    if (f < 19000) return '17m';
-    if (f < 22000) return '15m';
-    if (f < 26000) return '12m';
-    if (f < 30000) return '10m';
-    if (f < 54000) return '6m';
-    if (f < 148000) return '2m';
-    if (f < 450000) return '70cm';
-    return 'SHF';
+  const state = { spots:[], busy:false, band:'ALL', mode:'ALL', query:'' };
+  const esc = value => String(value ?? '').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const normCall = value => String(value||'').trim().toUpperCase();
+  const bandFromFreq = f => {
+    if(f<2000)return '160m'; if(f<4000)return '80m'; if(f<6000)return '60m';
+    if(f<8000)return '40m'; if(f<11000)return '30m'; if(f<15000)return '20m';
+    if(f<19000)return '17m'; if(f<22000)return '15m'; if(f<26000)return '12m';
+    if(f<30000)return '10m'; if(f<54000)return '6m'; if(f<148000)return '2m';
+    if(f<450000)return '70cm'; return 'SHF';
   };
   function parseUtc(value) {
-    if (typeof value === 'number') return value < 1e12 ? value * 1000 : value;
-    const raw = String(value || '').trim();
-    if (!raw) return Date.now();
-    const normalized = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw) ? raw : raw + 'Z';
-    const parsed = Date.parse(normalized);
-    return Number.isFinite(parsed) ? parsed : Date.now();
+    if(typeof value==='number') return value<1e12?value*1000:value;
+    const raw=String(value||'').trim();
+    if(!raw)return Date.now();
+    const parsed=Date.parse(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(raw)?raw:raw+'Z');
+    return Number.isFinite(parsed)?parsed:Date.now();
   }
-  function detectMode(info) {
-    const text = String(info || '').toUpperCase();
-    // DX Summit supplies the operating mode in the spot's free-text info.
-    // Classify only explicit mode labels; never guess from the frequency.
-    if (/\b(SSB|LSB|USB|PHONE)\b/.test(text)) return { mode:'SSB', group:'SSB' };
-    if (/\b(FT8|FT4|RTTY|PSK(?:31|63|125)?|JT65|JT9|WSPR|JS8|OLIVIA|MSK144|DIGI)\b/.test(text)) return { mode:'DIGI', group:'DIGI' };
-    if (/\b(CW|MORSE)\b/.test(text)) return { mode:'CW', group:'CW' };
-    return { mode:'—', group:'OTHER' };
+  function explicitMode(info) {
+    const t=String(info||'').toUpperCase();
+    if(/\b(SSB|LSB|USB|PHONE)\b/.test(t))return {mode:'SSB',group:'SSB'};
+    if(/\b(FT8|FT4|RTTY|PSK(?:31|63|125)?|JT65|JT9|WSPR|JS8|OLIVIA|MSK144|DIGI)\b/.test(t))return {mode:'DIGI',group:'DIGI'};
+    if(/\b(CW|MORSE)\b/.test(t))return {mode:'CW',group:'CW'};
+    if(/\b(FM)\b/.test(t))return {mode:'FM',group:'OTHER'};
+    if(/\b(AM)\b/.test(t))return {mode:'AM',group:'SSB'};
+    return null;
+  }
+  // DX Summit v1 does not supply a separate mode field for every spot.
+  // When its info/comment is empty, classify from the preferred IARU Region 1
+  // band-plan segment. Explicit mode labels always take priority.
+  function modeFromBandPlan(freqKhz) {
+    const f=Number(freqKhz);
+    if(!Number.isFinite(f))return {mode:'—',group:'OTHER'};
+    const rules=[
+      [1810,1840,'CW'],[1840,2000,'SSB'],
+      [3500,3600,'CW'],[3600,3800,'SSB'],
+      [7053,7200,'SSB'],
+      [10100,10130,'CW'],[10130,10150,'DIGI'],
+      [14000,14070,'CW'],[14070,14112,'DIGI'],[14112,14350,'SSB'],
+      [18068,18095,'CW'],[18095,18111,'DIGI'],[18111,18168,'SSB'],
+      [21000,21070,'CW'],[21070,21149,'DIGI'],[21151,21450,'SSB'],
+      [24890,24915,'CW'],[24915,24931,'DIGI'],[24940,24990,'SSB'],
+      [28000,28070,'CW'],[28070,28190,'DIGI'],[28300,29000,'SSB'],
+      [50100,50300,'SSB'],[144150,144400,'SSB'],[432100,432400,'SSB']
+    ];
+    for(const [low,high,mode] of rules)if(f>=low&&f<high){
+      if(mode==='CW')return {mode:'CW',group:'CW'};
+      if(mode==='DIGI')return {mode:'DIGI',group:'DIGI'};
+      return {mode:'SSB',group:'SSB'};
+    }
+    return {mode:'—',group:'OTHER'};
+  }
+  function classifyMode(info,frequency){return explicitMode(info)||modeFromBandPlan(frequency);}
+  function extractRows(payload) {
+    if(Array.isArray(payload))return payload;
+    for(const key of ['spots','data','items','results'])if(Array.isArray(payload?.[key]))return payload[key];
+    throw new Error('DX Summit API zwróciło nieprawidłowy format JSON.');
   }
   function normalizeSpot(row) {
-    const frequency = Number(row?.frequency);
-    const dx = normCall(row?.dx_call);
-    const spotter = normCall(row?.de_call);
-    if (!(frequency > 0) || !dx || !spotter) return null;
-    const message = String(row?.info || '').trim().slice(0,240);
-    const detected = detectMode(message);
-    return {
-      id: row?.id == null ? '' : String(row.id),
-      dx, spotter, frequency,
-      band: bandFromFreq(frequency),
-      mode: detected.mode,
-      group: detected.group,
-      message,
-      time: parseUtc(row?.time),
-      source: 'DX Summit'
-    };
-  }
-  function extractRows(payload) {
-    if (Array.isArray(payload)) return payload;
-    for (const key of ['spots','data','items','results']) {
-      if (Array.isArray(payload?.[key])) return payload[key];
-    }
-    throw new Error('DX Summit API zwróciło nieoczekiwany format JSON.');
+    const frequency=Number(row?.frequency), dx=normCall(row?.dx_call), spotter=normCall(row?.de_call);
+    if(!(frequency>0)||!dx||!spotter)return null;
+    const info=String(row?.info||'').trim(), mode=classifyMode(info,frequency);
+    return {id:String(row?.id??''),dx,spotter,frequency,band:bandFromFreq(frequency),mode:mode.mode,group:mode.group,message:info.slice(0,240),time:parseUtc(row?.time),source:'DX Summit'};
   }
   function buildApiUrl() {
-    const now = Date.now();
-    const params = new URLSearchParams({
-      content_type: 'json',
-      limit: '250',
-      from_time: String(Math.floor(now / 1000) - 24 * 60 * 60),
-      to_time: String(Math.floor(now / 1000)),
-      include: 'HF,VHF,UHF,SHF',
-      refresh: String(now)
-    });
-    return API + '?' + params.toString();
+    const now=Math.floor(Date.now()/1000);
+    const params=new URLSearchParams({content_type:'json',limit:'250',from_time:String(now-86400),to_time:String(now),include:'HF,VHF,UHF,SHF',refresh:String(Date.now())});
+    return API+'?'+params.toString();
   }
   async function getJson() {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const controller=new AbortController(), timeout=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
     try {
-      let response;
-      try {
-        response = await fetch(buildApiUrl(), {
-          method:'GET', mode:'cors', credentials:'omit', cache:'no-store',
-          headers:{Accept:'application/json'}, signal:controller.signal
-        });
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-      } catch (primaryError) {
-        // Older API installations may ignore some query parameters. Retry the plain JSON feed.
-        if (primaryError?.name === 'AbortError') throw primaryError;
-        response = await fetch(API, {
-          method:'GET', mode:'cors', credentials:'omit', cache:'no-store',
-          headers:{Accept:'application/json'}, signal:controller.signal
-        });
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-      }
+      const response=await fetch(buildApiUrl(),{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',headers:{Accept:'application/json'},signal:controller.signal});
+      if(!response.ok)throw new Error('DX Summit HTTP '+response.status);
       return await response.json();
-    } catch (error) {
-      if (error?.name === 'AbortError') throw new Error('Przekroczono limit czasu 15 s.');
-      if (error instanceof TypeError) throw new Error('Przeglądarka zablokowała połączenie z DX Summit (sieć/CORS).');
+    } catch(error) {
+      if(error?.name==='AbortError')throw new Error('Przekroczono limit czasu 15 s.');
+      if(error instanceof TypeError)throw new Error('Połączenie z DX Summit zablokowane (sieć/CORS).');
       throw error;
-    } finally {
-      clearTimeout(timeout);
-    }
+    } finally {clearTimeout(timeout);}
   }
   function merge(rows) {
-    const byId = new Map();
-    const fallback = new Map();
-    for (const spot of rows) {
-      if (spot.id) {
-        if (!byId.has(spot.id)) byId.set(spot.id, spot);
-      } else {
-        const key = [spot.dx,spot.spotter,spot.frequency,spot.time].join('|');
-        if (!fallback.has(key)) fallback.set(key,spot);
-      }
+    const byId=new Map(), fallback=new Map();
+    for(const spot of rows) {
+      if(spot.id){if(!byId.has(spot.id))byId.set(spot.id,spot);}
+      else {const key=[spot.dx,spot.spotter,spot.frequency,spot.time].join('|');if(!fallback.has(key))fallback.set(key,spot);}
     }
-    state.spots = [...byId.values(),...fallback.values()].sort((a,b)=>b.time-a.time).slice(0,1200);
+    state.spots=[...byId.values(),...fallback.values()].sort((a,b)=>b.time-a.time).slice(0,1200);
   }
   function filtered() {
-    return state.spots.filter(s =>
-      (state.band === 'ALL' || s.band === state.band) &&
-      (state.mode === 'ALL' || s.group === state.mode) &&
-      (!state.query || `${s.dx} ${s.spotter} ${s.band} ${s.frequency} ${s.mode} ${s.message}`.toUpperCase().includes(state.query))
-    );
+    return state.spots.filter(s=>(state.band==='ALL'||s.band===state.band)&&(state.mode==='ALL'||s.group===state.mode)&&(!state.query||`${s.dx} ${s.spotter} ${s.band} ${s.frequency} ${s.mode} ${s.message}`.toUpperCase().includes(state.query)));
   }
-  function modeClass(group) {
-    return group === 'CW' ? 'mode-cw' : group === 'SSB' ? 'mode-ssb' : group === 'DIGI' ? 'mode-digi' : 'mode-other';
-  }
+  const modeClass=group=>group==='CW'?'mode-cw':group==='SSB'?'mode-ssb':group==='DIGI'?'mode-digi':'mode-other';
   function render() {
-    const list = filtered();
-    $('totalSpots').textContent = list.length.toLocaleString('pl-PL');
-    $('spotsInfo').textContent = `${state.spots.length} raportów pobranych bezpośrednio z DX Summit`;
-    $('activeBands').textContent = new Set(list.map(s=>s.band)).size;
-    $('uniqueDx').textContent = new Set(list.map(s=>s.dx)).size;
-    $('count').textContent = `${list.length.toLocaleString('pl-PL')} SPOTÓW`;
-    if (!list.length) {
-      const message = state.mode === 'SSB'
-        ? 'DX Summit nie zwrócił teraz spotów z jawnym oznaczeniem SSB/LSB/USB. Nie zgadujemy emisji z częstotliwości.'
-        : 'Brak spotów dla wybranych filtrów.';
-      $('rows').innerHTML = `<tr><td class="empty" colspan="7">${message}</td></tr>`;
+    const list=filtered();
+    $('totalSpots').textContent=list.length.toLocaleString('pl-PL');
+    $('spotsInfo').textContent=`${state.spots.length} spotów z DX Summit · dane na żywo`;
+    $('activeBands').textContent=new Set(list.map(s=>s.band)).size;
+    $('uniqueDx').textContent=new Set(list.map(s=>s.dx)).size;
+    $('count').textContent=`${list.length.toLocaleString('pl-PL')} SPOTÓW`;
+    if(!list.length){
+      $('rows').innerHTML=`<tr><td class="empty" colspan="7">${state.mode==='SSB'?'W aktualnym zestawie DX Summit nie ma spotów SSB dla wybranych filtrów.':'Brak spotów dla wybranych filtrów.'}</td></tr>`;
       return;
     }
-    $('rows').innerHTML = list.slice(0,700).map(s =>
-      `<tr><td class="time">${new Date(s.time).toISOString().slice(11,19)}</td><td class="frequency">${(s.frequency/1000).toFixed(3)}</td><td><span class="band">${esc(s.band.toUpperCase())}</span></td><td><span class="mode ${modeClass(s.group)}">${esc(s.mode)}</span></td><td><span class="callsign">${esc(s.dx)}</span></td><td><span class="spotter">${esc(s.spotter)}</span></td><td class="message" title="${esc(s.message)}">${esc(s.message || '—')}</td></tr>`
-    ).join('');
+    $('rows').innerHTML=list.slice(0,700).map(s=>`<tr><td class="time">${new Date(s.time).toISOString().slice(11,19)}</td><td class="frequency">${(s.frequency/1000).toFixed(3)}</td><td><span class="band">${esc(s.band.toUpperCase())}</span></td><td><span class="mode ${modeClass(s.group)}">${esc(s.mode)}</span></td><td><span class="callsign">${esc(s.dx)}</span></td><td><span class="spotter">${esc(s.spotter)}</span></td><td class="message" title="${esc(s.message)}">${esc(s.message||'—')}</td></tr>`).join('');
   }
-  function setStatus(ok, detail) {
-    $('led').className = 'led' + (ok ? '' : ' off');
-    $('statusText').textContent = ok ? 'LIVE · DX SUMMIT' : 'BRAK POŁĄCZENIA';
-    $('lastUpdated').textContent = ok
-      ? `DX Summit · ostatni odbiór: ${new Date().toISOString().slice(11,19)} UTC · odświeżanie co 60 s`
-      : 'Oczekiwanie na dane z DX Summit…';
-    $('notice').style.display = ok ? 'none' : 'block';
-    $('notice').textContent = ok ? '' : detail;
-    $('sourceUsed').textContent = ok ? `Aktywne źródło: DX Summit · ${state.spots.length} raportów` : 'DX Summit nie odpowiada';
+  function setStatus(ok,detail) {
+    $('led').className='led'+(ok?'':' off');
+    $('statusText').textContent=ok?'LIVE · DX SUMMIT':'BRAK POŁĄCZENIA';
+    $('lastUpdated').textContent=ok?`DX Summit · ostatni odbiór: ${new Date().toISOString().slice(11,19)} UTC · odświeżanie co 60 s`:'Oczekiwanie na dane z DX Summit…';
+    $('notice').style.display=ok?'none':'block';
+    $('notice').textContent=ok?'':detail;
+    $('sourceUsed').textContent=ok?`Aktywne źródło: DX Summit · ${state.spots.length} spotów`:'DX Summit nie odpowiada';
   }
   async function refreshAll() {
-    if (state.busy) return;
-    state.busy = true;
-    $('refresh').disabled = true;
-    $('refresh').textContent = 'POBIERANIE…';
+    if(state.busy)return;
+    state.busy=true;$('refresh').disabled=true;$('refresh').textContent='POBIERANIE…';
     try {
-      const rows = extractRows(await getJson());
-      const spots = rows.map(normalizeSpot).filter(Boolean);
-      merge(spots);
-      setStatus(true);
-      render();
-    } catch (error) {
-      setStatus(false, `DX Summit: ${error.message || error}`);
-      if (!state.spots.length) render();
-    } finally {
-      state.busy = false;
-      $('refresh').disabled = false;
-      $('refresh').textContent = '↻ ODŚWIEŻ';
-    }
+      const rows=extractRows(await getJson());
+      merge(rows.map(normalizeSpot).filter(Boolean));
+      setStatus(true);render();
+    } catch(error) {
+      setStatus(false,`DX Summit: ${error.message||error}`);
+      if(!state.spots.length)render();
+    } finally {state.busy=false;$('refresh').disabled=false;$('refresh').textContent='↻ ODŚWIEŻ';}
   }
-  document.querySelectorAll('[data-band]').forEach(button => button.addEventListener('click', () => {
-    state.band=button.dataset.band;
-    document.querySelectorAll('[data-band]').forEach(item=>item.classList.toggle('active',item===button));
-    render();
+  document.querySelectorAll('[data-band]').forEach(button=>button.addEventListener('click',()=>{
+    state.band=button.dataset.band;document.querySelectorAll('[data-band]').forEach(item=>item.classList.toggle('active',item===button));render();
   }));
-  document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => {
-    state.mode=button.dataset.mode;
-    document.querySelectorAll('[data-mode]').forEach(item=>item.classList.toggle('active',item===button));
-    render();
+  document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{
+    state.mode=button.dataset.mode;document.querySelectorAll('[data-mode]').forEach(item=>item.classList.toggle('active',item===button));render();
   }));
   $('search').addEventListener('input',event=>{state.query=event.target.value.trim().toUpperCase();render();});
   $('clear').addEventListener('click',()=>{
     state.band='ALL';state.mode='ALL';state.query='';$('search').value='';
     document.querySelectorAll('[data-band]').forEach(item=>item.classList.toggle('active',item.dataset.band==='ALL'));
-    document.querySelectorAll('[data-mode]').forEach(item=>item.classList.toggle('active',item.dataset.mode==='ALL'));
-    render();
+    document.querySelectorAll('[data-mode]').forEach(item=>item.classList.toggle('active',item.dataset.mode==='ALL'));render();
   });
   $('refresh').addEventListener('click',refreshAll);
   const updateClock=()=>$('utc').textContent=`UTC ${new Date().toISOString().slice(11,19)}`;
-  updateClock();setInterval(updateClock,1000);
-  render();refreshAll();setInterval(refreshAll,POLL_MS);
+  updateClock();setInterval(updateClock,1000);render();refreshAll();setInterval(refreshAll,POLL_MS);
 })();
 </script>
 </body>
