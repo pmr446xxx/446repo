@@ -152,7 +152,7 @@
   }
   function setStatus(ok,detail) {
     $('led').className='led'+(ok?'':' off');
-    $('statusText').textContent=ok?'LIVE · DX SUMMIT':'BRAK POŁĄCZENIA';
+    $('statusText').textContent=ok?'LIVE 446DX.PL':'BRAK POŁĄCZENIA';
     $('lastUpdated').textContent=ok?`DX Summit · ostatni odbiór: ${new Date().toISOString().slice(11,19)} UTC · odświeżanie co 60 s`:'Oczekiwanie na dane z DX Summit…';
     $('notice').style.display=ok?'none':'block';
     $('notice').textContent=ok?'':detail;
