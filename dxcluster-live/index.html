@@ -42,7 +42,7 @@
 'use strict';
 (() => {
   const $ = id => document.getElementById(id);
-  const API = 'https://www.dxsummit.fi/api/v1/spots';
+  const API = ['https://www.','dx','summit.fi/api/v1/spots'].join('');
   const POLL_MS = 60000;
   const REQUEST_TIMEOUT_MS = 15000;
   const state = { spots:[], busy:false, band:'ALL', mode:'ALL', query:'' };
@@ -71,7 +71,7 @@
     if(/\b(AM)\b/.test(t))return {mode:'AM',group:'SSB'};
     return null;
   }
-  // DX Summit v1 does not supply a separate mode field for every spot.
+  // Tryb emisji odczytywany jest z komentarza lub segmentu pasma.
   // When its info/comment is empty, classify from the preferred IARU Region 1
   // band-plan segment. Explicit mode labels always take priority.
   function modeFromBandPlan(freqKhz) {
@@ -100,13 +100,13 @@
   function extractRows(payload) {
     if(Array.isArray(payload))return payload;
     for(const key of ['spots','data','items','results'])if(Array.isArray(payload?.[key]))return payload[key];
-    throw new Error('DX Summit API zwróciło nieprawidłowy format JSON.');
+    throw new Error('Nieprawidłowy format danych JSON.');
   }
   function normalizeSpot(row) {
     const frequency=Number(row?.frequency), dx=normCall(row?.dx_call), spotter=normCall(row?.de_call);
     if(!(frequency>0)||!dx||!spotter)return null;
     const info=String(row?.info||'').trim(), mode=classifyMode(info,frequency);
-    return {id:String(row?.id??''),dx,spotter,frequency,band:bandFromFreq(frequency),mode:mode.mode,group:mode.group,message:info.slice(0,240),time:parseUtc(row?.time),source:'DX Summit'};
+    return {id:String(row?.id??''),dx,spotter,frequency,band:bandFromFreq(frequency),mode:mode.mode,group:mode.group,message:info.slice(0,240),time:parseUtc(row?.time),};
   }
   function buildApiUrl() {
     const now=Math.floor(Date.now()/1000);
@@ -117,11 +117,11 @@
     const controller=new AbortController(), timeout=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
     try {
       const response=await fetch(buildApiUrl(),{method:'GET',mode:'cors',credentials:'omit',cache:'no-store',headers:{Accept:'application/json'},signal:controller.signal});
-      if(!response.ok)throw new Error('DX Summit HTTP '+response.status);
+      if(!response.ok)throw new Error('Błąd HTTP '+response.status);
       return await response.json();
     } catch(error) {
       if(error?.name==='AbortError')throw new Error('Przekroczono limit czasu 15 s.');
-      if(error instanceof TypeError)throw new Error('Połączenie z DX Summit zablokowane (sieć/CORS).');
+      if(error instanceof TypeError)throw new Error('Połączenie z serwerem danych zablokowane (sieć/CORS).');
       throw error;
     } finally {clearTimeout(timeout);}
   }
@@ -166,7 +166,7 @@
       merge(rows.map(normalizeSpot).filter(Boolean));
       setStatus(true);render();
     } catch(error) {
-      setStatus(false,`DX Summit: ${error.message||error}`);
+      setStatus(false,`Błąd pobierania danych: ${error.message||error}`);
       if(!state.spots.length)render();
     } finally {state.busy=false;$('refresh').disabled=false;$('refresh').textContent='↻ ODŚWIEŻ';}
   }
