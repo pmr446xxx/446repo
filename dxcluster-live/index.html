@@ -92,15 +92,6 @@
     }
     return output;
   }
-  function normalizeDx(body) {
-    const arr = Array.isArray(body) ? body : (Array.isArray(body?.spots) ? body.spots : []);
-    return arr.map(s => {
-      const frequency = Number(s.frequency), dx = normCall(s.spotted || s.dxcall), spotter = normCall(s.spotter);
-      if (!(frequency > 0) || !dx || !spotter) return null;
-      const mode = String(s.add?.mode || '—').toUpperCase();
-      return { dx, spotter, frequency, band: s.add?.band ? `${Number(s.add.band)}m` : bandFromFreq(frequency), mode, group: modeGroup(mode), message: String(s.message || '').slice(0,180), time: parseTime(s.when) };
-    }).filter(Boolean);
-  }
   function merge() {
     const input = Object.values(state.feeds).flatMap(feed => feed?.items || []).sort((a,b) => b.time-a.time);
     const merged = [];
@@ -168,7 +159,7 @@
   $('clear').addEventListener('click',()=>{state.band='ALL';state.mode='ALL';state.query='';$('search').value='';document.querySelectorAll('[data-band]').forEach(b=>b.classList.toggle('active',b.dataset.band==='ALL'));document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode==='ALL'));render();});
   $('refresh').addEventListener('click',refreshAll);
   updateClock(); setInterval(updateClock,1000); render(); refreshAll();
-  setInterval(()=>fetchFeed('ham'),15000); setInterval(()=>fetchFeed('rbn'),15000); setInterval(()=>fetchFeed('dx'),60000);
+  setInterval(()=>fetchFeed('ham'),15000); setInterval(()=>fetchFeed('rbn'),15000);
 })();
 </script>
 </body>
