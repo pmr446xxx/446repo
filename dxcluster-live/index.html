@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#101112">
+<meta name="color-scheme" content="dark">
 <title>CLUSTER BY KALBAR / ML5403</title>
 <style>
-:root{color-scheme:dark;--bg:#101112;--panel:#191b1c;--panel2:#202324;--line:#34383a;--text:#f0f1ed;--muted:#a1a6a1;--red:#ff625d;--green:#42d392;--yellow:#f1c84b;--blue:#81b9d8}
-*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(ellipse at 50% -25%,#292d2c 0,#101112 60%);color:var(--text);font:14px/1.45 Inter,Segoe UI,Arial,sans-serif;min-height:100vh}button,input,select{font:inherit}.shell{max-width:1550px;margin:0 auto;padding:22px}.header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 24px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(110deg,#202222,#17191a);box-shadow:0 12px 35px #0005}.brand{font-size:clamp(22px,3vw,34px);font-weight:900;letter-spacing:2.3px;line-height:1.1}.brand .red{color:var(--red)}.brand .green{color:var(--green)}.brand .yellow{color:var(--yellow)}.signature{margin-top:9px;font-size:11px;font-weight:800;letter-spacing:3px;color:#d4d6d0}.right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}.utc{font:12px ui-monospace,Consolas,monospace;color:#c5cac4}.live{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #32664f;border-radius:30px;background:#14261e;color:#8df0bb;font-size:10px;font-weight:800;letter-spacing:1px}.led{height:8px;width:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}.led.wait{background:var(--yellow);box-shadow:0 0 10px var(--yellow)}.led.off{background:var(--red);box-shadow:0 0 10px var(--red)}button{border:1px solid #555b5d;border-radius:7px;background:#282c2d;color:#f0f1ed;padding:9px 13px;cursor:pointer}button:hover{border-color:#a1a6a1;background:#323738}button:focus-visible,input:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}.metric{padding:15px 17px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}.metric label{display:block;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:1.5px}.metric strong{display:block;margin-top:4px;font-size:26px;line-height:1.2}.metric small{color:#929994;font-size:10px}.toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}.group-label{margin:0 4px 0 5px;color:#9ca29d;font-size:9px;font-weight:800;letter-spacing:1.3px}.filter{padding:7px 10px;border-radius:6px;font-size:10px;font-weight:800}.filter.active{border-color:var(--green);background:#183126;color:#a1f1c4}.search{flex:1;min-width:190px;padding:9px 11px;border:1px solid #424849;border-radius:7px;background:#111414;color:var(--text)}.feed{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel);box-shadow:0 12px 35px #0003}.feed-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 17px;border-bottom:1px solid var(--line);flex-wrap:wrap}.feed-title{font-size:12px;font-weight:900;letter-spacing:1.6px}.feed-sub{margin-top:4px;color:var(--muted);font-size:10px}.count{color:var(--yellow);font-size:11px;font-weight:800}.table-scroll{max-height:70vh;overflow:auto}table{width:100%;min-width:760px;border-collapse:collapse;font-size:12px}thead{position:sticky;top:0;z-index:2}th{text-align:left;padding:12px 11px;background:#25292a;color:#b5bcb6;font-size:9px;letter-spacing:1.1px;white-space:nowrap}td{padding:11px;border-top:1px solid #303536;color:#e0e3de;white-space:nowrap}tbody tr:nth-child(even){background:#1d2021}tbody tr:hover{background:#292e2d}.time{font:11px ui-monospace,Consolas,monospace;color:#aeb6af}.frequency{font:13px ui-monospace,Consolas,monospace;font-weight:800;color:#f2d76b}.callsign{font-weight:900;color:#fff}.spotter{font-weight:700;color:#b8c7cd}.band{display:inline-block;padding:3px 7px;border-radius:4px;background:#303536;color:#e6e9e3;font-size:10px;font-weight:800}.mode{display:inline-block;min-width:48px;text-align:center;padding:4px 7px;border-radius:4px;font-size:9px;font-weight:900;letter-spacing:.5px}.mode-cw{background:#492524;color:#ffaaa5}.mode-ssb{background:#153d2c;color:#82e7af}.mode-digi{background:#4b401a;color:#ffe17a}.mode-other{background:#34393b;color:#c7d2d5}.message{color:#b5bcb7;max-width:420px;overflow:hidden;text-overflow:ellipsis}.empty{text-align:center;padding:36px 15px;color:#aab0aa}.notice{display:none;padding:11px 15px;border-bottom:1px solid #594c22;background:#2d2818;color:#eedb9d;font-size:11px}.footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:13px 3px;color:#909791;font-size:9px}.footer b{color:#cbd1ca}.source-credit{color:#b8c1b9}
+:root{color-scheme:dark;--bg:#101112;--panel:#191b1c;--panel2:#202324;--line:#34383a;--text:#f0f1ed;--muted:#a1a6a1;--red:#ff625d;--green:#42d392;--yellow:#f1c84b}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(ellipse at 50% -25%,#292d2c 0,#101112 60%);color:var(--text);font:14px/1.45 Inter,Segoe UI,Arial,sans-serif;min-height:100vh}button,input,select{font:inherit}.shell{max-width:1550px;margin:0 auto;padding:22px}.header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 24px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(110deg,#202222,#17191a);box-shadow:0 12px 35px #0005}.brand{font-size:clamp(22px,3vw,34px);font-weight:900;letter-spacing:2.3px;line-height:1.1}.red{color:var(--red)}.green{color:var(--green)}.yellow{color:var(--yellow)}.signature{margin-top:9px;font-size:11px;font-weight:800;letter-spacing:3px;color:#d4d6d0}.right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}.utc{font:12px ui-monospace,Consolas,monospace;color:#c5cac4}.live{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #32664f;border-radius:30px;background:#14261e;color:#8df0bb;font-size:10px;font-weight:800;letter-spacing:1px}.led{height:8px;width:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}.led.wait{background:var(--yellow);box-shadow:0 0 10px var(--yellow)}.led.off{background:var(--red);box-shadow:0 0 10px var(--red)}button{border:1px solid #555b5d;border-radius:7px;background:#282c2d;color:#f0f1ed;padding:9px 13px;cursor:pointer}button:hover{border-color:#a1a6a1;background:#323738}button:disabled{opacity:.55;cursor:wait}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}.metric{padding:15px 17px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}.metric label{display:block;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:1.5px}.metric strong{display:block;margin-top:4px;font-size:26px;line-height:1.2}.metric small{color:#929994;font-size:10px}.toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:14px 0;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}.group-label{margin:0 4px 0 5px;color:#9ca29d;font-size:9px;font-weight:800;letter-spacing:1.3px}.filter{padding:7px 10px;border-radius:6px;font-size:10px;font-weight:800}.filter.active{border-color:var(--green);background:#183126;color:#a1f1c4}.search{flex:1;min-width:190px;padding:9px 11px;border:1px solid #424849;border-radius:7px;background:#111414;color:var(--text)}.feed{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel);box-shadow:0 12px 35px #0003}.feed-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 17px;border-bottom:1px solid var(--line);flex-wrap:wrap}.feed-title{font-size:12px;font-weight:900;letter-spacing:1.6px}.feed-sub{margin-top:4px;color:var(--muted);font-size:10px}.count{color:var(--yellow);font-size:11px;font-weight:800}.table-scroll{max-height:70vh;overflow:auto}table{width:100%;min-width:760px;border-collapse:collapse;font-size:12px}thead{position:sticky;top:0;z-index:2}th{text-align:left;padding:12px 11px;background:#25292a;color:#b5bcb6;font-size:9px;letter-spacing:1.1px;white-space:nowrap}td{padding:11px;border-top:1px solid #303536;color:#e0e3de;white-space:nowrap}tbody tr:nth-child(even){background:#1d2021}tbody tr:hover{background:#292e2d}.time{font:11px ui-monospace,Consolas,monospace;color:#aeb6af}.frequency{font:13px ui-monospace,Consolas,monospace;font-weight:800;color:#f2d76b}.callsign{font-weight:900;color:#fff}.spotter{font-weight:700;color:#b8c7cd}.band{display:inline-block;padding:3px 7px;border-radius:4px;background:#303536;color:#e6e9e3;font-size:10px;font-weight:800}.mode{display:inline-block;min-width:48px;text-align:center;padding:4px 7px;border-radius:4px;font-size:9px;font-weight:900;letter-spacing:.5px}.mode-cw{background:#492524;color:#ffaaa5}.mode-ssb{background:#153d2c;color:#82e7af}.mode-digi{background:#4b401a;color:#ffe17a}.mode-other{background:#34393b;color:#c7d2d5}.message{color:#b5bcb7;max-width:420px;overflow:hidden;text-overflow:ellipsis}.empty{text-align:center;padding:36px 15px;color:#aab0aa}.notice{display:none;padding:11px 15px;border-bottom:1px solid #594c22;background:#2d2818;color:#eedb9d;font-size:11px;overflow-wrap:anywhere}.footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:13px 3px;color:#909791;font-size:9px}.footer b{color:#cbd1ca}.source-credit{color:#b8c1b9}.source-links a{color:#b8c1b9;text-decoration:underline;text-underline-offset:2px}
 @media(max-width:700px){.shell{padding:9px}.header{padding:16px;align-items:flex-start;flex-direction:column}.right{justify-content:flex-start}.summary{gap:7px}.metric{padding:11px}.metric strong{font-size:21px}.metric label{font-size:8px}.toolbar{padding:9px;gap:5px}.group-label{width:100%;margin-top:5px}.search{min-width:100%;order:3}.table-scroll{max-height:none}.feed-head{padding:12px}}
 </style>
 </head>
@@ -33,22 +33,28 @@
 <section class="feed">
   <div class="feed-head"><div><div class="feed-title">OSTATNIE SPOTY DX</div><div class="feed-sub" id="lastUpdated">Oczekiwanie na pierwsze dane…</div></div><span class="count" id="count">0 SPOTÓW</span></div>
   <div class="notice" id="notice" role="status"></div>
-  <div class="table-scroll"><table><thead><tr><th>UTC</th><th>MHz</th><th>PASMO</th><th>MODE</th><th>STACJA DX</th><th>SPOTTER</th><th>KOMENTARZ</th></tr></thead><tbody id="rows"><tr><td class="empty" colspan="7">Łączenie z publicznymi feedami DX. Nie są wyświetlane dane demonstracyjne.</td></tr></tbody></table></div>
+  <div class="table-scroll"><table><thead><tr><th>UTC</th><th>MHz</th><th>PASMO</th><th>MODE</th><th>STACJA DX</th><th>SPOTTER</th><th>KOMENTARZ</th></tr></thead><tbody id="rows"><tr><td class="empty" colspan="7">Pobieranie prawdziwych spotów. Nie wyświetlamy danych demonstracyjnych.</td></tr></tbody></table></div>
 </section>
-<footer class="footer"><span><b>CLUSTER BY KALBAR / ML5403</b></span><span class="source-credit">Live feed: HamQTH.com · DX Cluster + Reverse Beacon Network (RBN)</span><span id="pollInfo">Automatyczne odświeżanie</span></footer>
+<footer class="footer"><span><b>CLUSTER BY KALBAR / ML5403</b></span><span class="source-credit">Źródła LIVE: HamQTH DX Cluster · Reverse Beacon Network</span><span id="pollInfo">Automatyczne odświeżanie co 15 s co 15 s</span></footer>
+<footer class="footer source-links"><span>Źródła danych: <a href="https://www.hamqth.com/developers" target="_blank" rel="noopener">HamQTH API</a></span><span id="sourceUsed">Oczekiwanie na feed…</span></footer>
 </main>
 <script>
 'use strict';
 (() => {
-  const $ = (id) => document.getElementById(id);
-  const ENDPOINTS = {
-    ham: { label: 'DX Cluster', url: 'https://www.hamqth.com/api/v2/spots?limit=200', interval: 15000 },
-    rbn: { label: 'RBN', url: 'https://www.hamqth.com/api/v2/rbn?maxAge=1800&sort=age', interval: 15000 }
+  const $ = id => document.getElementById(id);
+  // Public HamQTH API v2: no login, CORS enabled for browser clients.
+  const URLS = {
+    hamDx: 'https://www.hamqth.com/api/v2/spots?limit=200',
+    rbn: 'https://www.hamqth.com/api/v2/rbn?maxAge=1800&sort=age'
   };
-  const state = { feeds: Object.create(null), spots: [], busy: Object.create(null), lastFetch: Object.create(null), band: 'ALL', mode: 'ALL', query: '' };
-  const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  // HamQTH asks clients not to poll more often than every 15 seconds.
+  const POLL_MS = 15000;
+  const TIMEOUT_MS = 12000;
+  const state = { spots: [], feeds: {}, busy: false, band: 'ALL', mode: 'ALL', query: '' };
+
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const normCall = value => String(value || '').trim().toUpperCase();
-  const parseTime = value => { const ms = Date.parse(value); return Number.isFinite(ms) ? ms : Date.now(); };
+  const parseTime = value => { const ms = typeof value === 'number' ? value : Date.parse(value); return Number.isFinite(ms) ? ms : Date.now(); };
   const bandFromFreq = khz => {
     const f = Number(khz);
     if (!Number.isFinite(f) || f <= 0) return '—';
@@ -59,10 +65,11 @@
     if (f < 450000) return '70cm'; return 'SHF';
   };
   const normalizeBand = (raw, frequency) => {
-    const value = String(raw ?? '').trim().toUpperCase();
-    if (!value) return bandFromFreq(frequency);
+    if (raw === null || raw === undefined || raw === '') return bandFromFreq(frequency);
+    const value = String(raw).trim().toLowerCase();
     if (/^\d+(?:\.\d+)?$/.test(value)) return `${Number(value)}m`;
-    return value.toLowerCase();
+    if (/^\d+(?:\.\d+)?m$/.test(value)) return value;
+    return value;
   };
   const modeGroup = mode => {
     const m = String(mode || '').toUpperCase();
@@ -71,78 +78,68 @@
     if (/SSB|USB|LSB|PHONE|AM|FM/.test(m)) return 'SSB';
     return 'OTHER';
   };
-  function normalizeHam(body) {
-    if (!body || !Array.isArray(body.spots)) throw new Error('Nieprawidłowy format odpowiedzi HamQTH (oczekiwano tablicy spots).');
-    return body.spots.map(s => {
+  function normalizeHamDx(data) {
+    if (!data || !Array.isArray(data.spots)) throw new Error('HamQTH DX: nieprawidłowy format (brak tablicy spots).');
+    return data.spots.map(s => {
       const frequency = Number(s?.freq), dx = normCall(s?.dxcall), spotter = normCall(s?.spotter);
       if (!(frequency > 0) || !dx || !spotter) return null;
       const mode = String(s?.mode || '—').toUpperCase();
-      return {
-        dx, spotter, frequency,
-        band: normalizeBand(s?.band, frequency),
-        mode, group: modeGroup(mode),
-        message: String(s?.comment || '').slice(0,180),
-        time: parseTime(s?.time)
-      };
+      return { dx, spotter, frequency, band: normalizeBand(s?.band, frequency), mode, group: modeGroup(mode), message: String(s?.comment || '').slice(0,180), time: parseTime(s?.time), source: 'HamQTH DX' };
     }).filter(Boolean);
   }
-  function normalizeRbn(body) {
-    if (!body || !Array.isArray(body.spots)) throw new Error('Nieprawidłowy format odpowiedzi RBN (oczekiwano tablicy spots).');
-    const output = [];
-    for (const s of body.spots) {
+  function normalizeRbn(data) {
+    if (!data || !Array.isArray(data.spots)) throw new Error('HamQTH RBN: nieprawidłowy format (brak tablicy spots).');
+    const out = [];
+    for (const s of data.spots) {
       const frequency = Number(s?.freq), dx = normCall(s?.dxcall);
       if (!(frequency > 0) || !dx) continue;
       const mode = String(s?.mode || 'CW').toUpperCase();
       const age = Math.max(0, Number(s?.age) || 0);
-      const skimmers = Array.isArray(s?.skimmers) ? s.skimmers : [];
-      for (const skimmer of skimmers) {
+      for (const skimmer of (Array.isArray(s?.skimmers) ? s.skimmers : [])) {
         const spotter = normCall(skimmer?.call);
         if (!spotter) continue;
         const snr = Number(skimmer?.snr);
-        output.push({
-          dx, spotter, frequency,
-          band: normalizeBand(s?.band, frequency),
-          mode, group: modeGroup(mode),
-          message: Number.isFinite(snr) ? `SNR ${snr > 0 ? '+' : ''}${snr} dB` : 'RBN',
-          time: Date.now() - age * 1000
-        });
+        out.push({ dx, spotter, frequency, band: normalizeBand(s?.band, frequency), mode, group: modeGroup(mode), message: Number.isFinite(snr) ? `SNR ${snr > 0 ? '+' : ''}${snr} dB` : 'RBN', time: Date.now() - age * 1000, source: 'RBN' });
       }
     }
-    return output;
+    return out;
   }
-  function merge() {
-    const input = Object.values(state.feeds).flatMap(feed => feed?.items || []).sort((a,b) => b.time-a.time);
-    const merged = [];
-    for (const spot of input) {
-      const duplicate = merged.some(old => old.dx === spot.dx && old.spotter === spot.spotter && Math.abs(old.frequency-spot.frequency) <= 1 && Math.abs(old.time-spot.time) <= 180000);
-      if (!duplicate) merged.push(spot);
-    }
-    state.spots = merged.slice(0, 500);
-    render();
-  }
-  async function fetchFeed(key, force = false) {
-    const cfg = ENDPOINTS[key], now = Date.now();
-    if (!cfg || state.busy[key] || (!force && state.lastFetch[key] && now-state.lastFetch[key] < cfg.interval-500)) return;
-    state.busy[key] = true; state.lastFetch[key] = now;
-    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 11000);
+  async function getJson(url) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
-      const response = await fetch(cfg.url, { method:'GET', mode:'cors', credentials:'omit', cache:'no-store', headers:{Accept:'application/json'}, signal:controller.signal });
+      const response = await fetch(url, { method:'GET', mode:'cors', credentials:'omit', cache:'no-store', headers:{ Accept:'application/json' }, signal:controller.signal });
       if (!response.ok) {
         let detail = '';
-        try { const payload = await response.json(); detail = payload?.detail || payload?.title || payload?.message || ''; } catch (_) {}
+        try { const body = await response.json(); detail = body?.detail || body?.title || ''; } catch (_) {}
         throw new Error(detail ? `HTTP ${response.status}: ${detail}` : `HTTP ${response.status}`);
       }
-      const data = await response.json();
-      const parsers = { ham:normalizeHam, rbn:normalizeRbn };
-      const items = parsers[key](data);
-      state.feeds[key] = { ok:true, items, fetchedAt:Date.now(), error:null };
+      return await response.json();
     } catch (error) {
-      state.feeds[key] = { ok:false, items:state.feeds[key]?.items || [], fetchedAt:state.feeds[key]?.fetchedAt || 0, error:error.name === 'AbortError' ? 'Przekroczono czas oczekiwania (12 s)' : String(error.message || error).slice(0,180) };
-    } finally {
-      clearTimeout(timer); state.busy[key] = false; merge(); updateStatus();
+      if (error?.name === 'AbortError') throw new Error('przekroczono limit czasu 12 s');
+      if (error instanceof TypeError && /fetch/i.test(error.message)) throw new Error('przeglądarka odrzuciła połączenie (sieć lub CORS)');
+      throw error;
+    } finally { clearTimeout(timer); }
+  }
+  async function fetchDxFeed() {
+    try {
+      const items = normalizeHamDx(await getJson(URLS.hamDx));
+      state.feeds.dx = { ok:true, name:'HamQTH DX Cluster', at:Date.now(), count:items.length };
+      return items;
+    } catch (error) {
+      state.feeds.dx = { ok:false, error:`HamQTH DX Cluster: ${error.message || error}` };
+      return [];
     }
   }
-  async function refreshAll() { $('refresh').disabled = true; $('refresh').textContent = 'POBIERANIE…'; await Promise.all(Object.keys(ENDPOINTS).map(key => fetchFeed(key, true))); $('refresh').disabled = false; $('refresh').textContent = '↻ ODŚWIEŻ'; }
+  function merge(dxItems, rbnItems) {
+    const all = [...dxItems, ...rbnItems].sort((a,b) => b.time - a.time);
+    const unique = new Map();
+    for (const spot of all) {
+      const key = `${spot.dx}|${spot.spotter}|${Math.round(spot.frequency)}|${Math.floor(spot.time / 180000)}`;
+      if (!unique.has(key)) unique.set(key, spot);
+    }
+    state.spots = [...unique.values()].slice(0,500);
+  }
   function filtered() {
     return state.spots.filter(s => (state.band === 'ALL' || s.band === state.band) && (state.mode === 'ALL' || s.group === state.mode) && (!state.query || `${s.dx} ${s.spotter} ${s.band} ${s.frequency} ${s.mode} ${s.message}`.toUpperCase().includes(state.query)));
   }
@@ -150,39 +147,63 @@
   function render() {
     const list = filtered();
     $('totalSpots').textContent = list.length.toLocaleString('pl-PL');
-    $('spotsInfo').textContent = `${state.spots.length} unikalnych spotów po połączeniu feedów`;
-    $('activeBands').textContent = new Set(list.map(s=>s.band)).size;
-    $('uniqueDx').textContent = new Set(list.map(s=>s.dx)).size;
+    $('spotsInfo').textContent = `${state.spots.length} unikalnych spotów po połączeniu źródeł`;
+    $('activeBands').textContent = new Set(list.map(s => s.band)).size;
+    $('uniqueDx').textContent = new Set(list.map(s => s.dx)).size;
     $('count').textContent = `${list.length.toLocaleString('pl-PL')} SPOTÓW`;
     if (!list.length) {
-      const successful = Object.values(state.feeds).some(f=>f?.ok);
-      $('rows').innerHTML = `<tr><td class="empty" colspan="7">${successful ? 'Brak spotów dla wybranych filtrów.' : 'Oczekiwanie na prawdziwe dane z feedów. Nie wyświetlamy danych przykładowych.'}</td></tr>`;
+      $('rows').innerHTML = `<tr><td class="empty" colspan="7">${state.feeds.dx?.ok || state.feeds.rbn?.ok ? 'Brak spotów dla wybranych filtrów.' : 'Brak danych z feedów. Sprawdź informację o połączeniu powyżej.'}</td></tr>`;
       return;
     }
     $('rows').innerHTML = list.slice(0,350).map(s => `<tr><td class="time">${new Date(s.time).toISOString().slice(11,19)}</td><td class="frequency">${(s.frequency/1000).toFixed(3)}</td><td><span class="band">${esc(s.band.toUpperCase())}</span></td><td><span class="mode ${modeClass(s.group)}">${esc(s.mode)}</span></td><td><span class="callsign">${esc(s.dx)}</span></td><td><span class="spotter">${esc(s.spotter)}</span></td><td class="message" title="${esc(s.message)}">${esc(s.message || '—')}</td></tr>`).join('');
   }
   function updateStatus() {
-    const names = Object.keys(ENDPOINTS), ok = names.filter(k=>state.feeds[k]?.ok).length, attempted = names.filter(k=>state.feeds[k]).length;
-    $('led').className = 'led' + (ok === 0 && attempted ? ' off' : ok < names.length ? ' wait' : '');
-    $('statusText').textContent = ok === names.length ? 'LIVE · DX + RBN' : ok ? `LIVE · ${ok}/${names.length} FEEDY` : attempted ? 'BRAK POŁĄCZENIA' : 'ŁĄCZENIE Z FEEDAMI';
-    const times = names.map(k=>state.feeds[k]?.fetchedAt || 0).filter(Boolean);
-    $('lastUpdated').textContent = times.length ? `Ostatni poprawny odbiór: ${new Date(Math.max(...times)).toISOString().slice(11,19)} UTC · odświeżanie automatyczne` : 'Oczekiwanie na pierwsze dane z publicznych feedów…';
-    const failed = names.filter(k=>state.feeds[k] && !state.feeds[k].ok).length;
-    $('notice').style.display = failed ? 'block' : 'none';
-    if (failed) {
-      const details = names.filter(k => state.feeds[k] && !state.feeds[k].ok)
-        .map(k => `${ENDPOINTS[k].label}: ${state.feeds[k].error}`).join(' · ');
-      $('notice').textContent = `Nie udało się pobrać części danych. Działa ${ok}/${names.length}. ${details}`;
+    const dxOk = !!state.feeds.dx?.ok, rbnOk = !!state.feeds.rbn?.ok;
+    const anyOk = dxOk || rbnOk;
+    $('led').className = 'led' + (anyOk ? (dxOk && rbnOk ? '' : ' wait') : state.feeds.dx || state.feeds.rbn ? ' off' : ' wait');
+    $('statusText').textContent = dxOk && rbnOk ? 'LIVE · DX + RBN' : dxOk ? 'LIVE · DX' : rbnOk ? 'LIVE · RBN' : state.feeds.dx || state.feeds.rbn ? 'BRAK POŁĄCZENIA' : 'ŁĄCZENIE Z FEEDAMI';
+    $('lastUpdated').textContent = anyOk ? `Ostatni poprawny odbiór: ${new Date(Math.max(state.feeds.dx?.at || 0,state.feeds.rbn?.at || 0)).toISOString().slice(11,19)} UTC · automatyczne odświeżanie` : 'Oczekiwanie na pierwsze dane z publicznych feedów…';
+    const problems = [];
+    if (state.feeds.dx && !dxOk) problems.push(`DX: ${state.feeds.dx.error}`);
+    
+    if (state.feeds.rbn && !rbnOk) problems.push(`RBN: ${state.feeds.rbn.error}`);
+    $('notice').style.display = problems.length ? 'block' : 'none';
+    $('notice').textContent = problems.join(' · ');
+    const names = [];
+    if (dxOk) names.push(state.feeds.dx.name);
+    if (rbnOk) names.push('HamQTH RBN');
+    $('sourceUsed').textContent = names.length ? `Aktywne: ${names.join(' + ')}` : 'Żaden feed nie odpowiada';
+  }
+  async function refreshAll() {
+    if (state.busy) return;
+    state.busy = true;
+    $('refresh').disabled = true;
+    $('refresh').textContent = 'POBIERANIE…';
+    try {
+      const [dxResult, rbnResult] = await Promise.allSettled([
+        fetchDxFeed(),
+        getJson(URLS.rbn).then(normalizeRbn)
+      ]);
+      const dxItems = dxResult.status === 'fulfilled' ? dxResult.value : [];
+      if (rbnResult.status === 'fulfilled') state.feeds.rbn = { ok:true, name:'HamQTH RBN', at:Date.now(), count:rbnResult.value.length };
+      else state.feeds.rbn = { ok:false, error:`HamQTH RBN: ${rbnResult.reason?.message || rbnResult.reason}` };
+      merge(dxItems, rbnResult.status === 'fulfilled' ? rbnResult.value : []);
+      updateStatus();
+      render();
+    } finally {
+      state.busy = false;
+      $('refresh').disabled = false;
+      $('refresh').textContent = '↻ ODŚWIEŻ';
     }
   }
-  function updateClock() { $('utc').textContent = `UTC ${new Date().toISOString().slice(11,19)}`; }
-  document.querySelectorAll('[data-band]').forEach(button => button.addEventListener('click',()=>{state.band=button.dataset.band;document.querySelectorAll('[data-band]').forEach(b=>b.classList.toggle('active',b===button));render();}));
-  document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click',()=>{state.mode=button.dataset.mode;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===button));render();}));
-  $('search').addEventListener('input',e=>{state.query=e.target.value.trim().toUpperCase();render();});
-  $('clear').addEventListener('click',()=>{state.band='ALL';state.mode='ALL';state.query='';$('search').value='';document.querySelectorAll('[data-band]').forEach(b=>b.classList.toggle('active',b.dataset.band==='ALL'));document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode==='ALL'));render();});
-  $('refresh').addEventListener('click',refreshAll);
+  document.querySelectorAll('[data-band]').forEach(button => button.addEventListener('click', () => { state.band=button.dataset.band; document.querySelectorAll('[data-band]').forEach(b=>b.classList.toggle('active',b===button)); render(); }));
+  document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => { state.mode=button.dataset.mode; document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b===button)); render(); }));
+  $('search').addEventListener('input', e => { state.query=e.target.value.trim().toUpperCase(); render(); });
+  $('clear').addEventListener('click', () => { state.band='ALL'; state.mode='ALL'; state.query=''; $('search').value=''; document.querySelectorAll('[data-band]').forEach(b=>b.classList.toggle('active',b.dataset.band==='ALL')); document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode==='ALL')); render(); });
+  $('refresh').addEventListener('click', refreshAll);
+  const updateClock = () => { $('utc').textContent = `UTC ${new Date().toISOString().slice(11,19)}`; };
   updateClock(); setInterval(updateClock,1000); render(); refreshAll();
-  setInterval(()=>fetchFeed('ham'),15000); setInterval(()=>fetchFeed('rbn'),15000);
+  setInterval(refreshAll,POLL_MS);
 })();
 </script>
 </body>
