@@ -35,8 +35,8 @@
   <div class="notice" id="notice" role="status"></div>
   <div class="table-scroll"><table><thead><tr><th>UTC</th><th>MHz</th><th>PASMO</th><th>MODE</th><th>STACJA DX</th><th>SPOTTER</th><th>KOMENTARZ</th></tr></thead><tbody id="rows"><tr><td class="empty" colspan="7">Pobieranie prawdziwych spotów. Nie wyświetlamy danych demonstracyjnych.</td></tr></tbody></table></div>
 </section>
-<footer class="footer"><span><b>CLUSTER BY KALBAR / ML5403</b></span><span class="source-credit">Źródła LIVE: DX Summit · tryb z informacji spotu lub segmentu IARU Region 1</span><span id="pollInfo">Automatyczne odświeżanie co 60 s</span></footer>
-<footer class="footer source-links"><span>Źródła danych: <a href="https://www.dxsummit.fi/#/" target="_blank" rel="noopener">DX Summit LIVE</a> · <a href="https://www.dxsummit.fi/api/v1/spots" target="_blank" rel="noopener">DX Summit JSON API</a> · <a href="https://www.iaru-r1.org/on-the-air/band-plans/" target="_blank" rel="noopener">IARU Region 1 Bandplan</a></span><span id="sourceUsed">Oczekiwanie na feed…</span></footer>
+<footer class="footer"><span><b>CLUSTER BY KALBAR / ML5403</b></span><span id="pollInfo">Automatyczne odświeżanie co 60 s</span></footer>
+
 </main>
 <script>
 'use strict';
@@ -140,12 +140,12 @@
   function render() {
     const list=filtered();
     $('totalSpots').textContent=list.length.toLocaleString('pl-PL');
-    $('spotsInfo').textContent=`${state.spots.length} spotów z DX Summit · dane na żywo`;
+    $('spotsInfo').textContent='';
     $('activeBands').textContent=new Set(list.map(s=>s.band)).size;
     $('uniqueDx').textContent=new Set(list.map(s=>s.dx)).size;
     $('count').textContent=`${list.length.toLocaleString('pl-PL')} SPOTÓW`;
     if(!list.length){
-      $('rows').innerHTML=`<tr><td class="empty" colspan="7">${state.mode==='SSB'?'W aktualnym zestawie DX Summit nie ma spotów SSB dla wybranych filtrów.':'Brak spotów dla wybranych filtrów.'}</td></tr>`;
+      $('rows').innerHTML=`<tr><td class="empty" colspan="7">${state.mode==='SSB'?'Brak spotów SSB dla wybranych filtrów.':'Brak spotów dla wybranych filtrów.'}</td></tr>`;
       return;
     }
     $('rows').innerHTML=list.slice(0,700).map(s=>`<tr><td class="time">${new Date(s.time).toISOString().slice(11,19)}</td><td class="frequency">${(s.frequency/1000).toFixed(3)}</td><td><span class="band">${esc(s.band.toUpperCase())}</span></td><td><span class="mode ${modeClass(s.group)}">${esc(s.mode)}</span></td><td><span class="callsign">${esc(s.dx)}</span></td><td><span class="spotter">${esc(s.spotter)}</span></td><td class="message" title="${esc(s.message)}">${esc(s.message||'—')}</td></tr>`).join('');
@@ -153,10 +153,10 @@
   function setStatus(ok,detail) {
     $('led').className='led'+(ok?'':' off');
     $('statusText').textContent=ok?'LIVE 446DX.PL':'BRAK POŁĄCZENIA';
-    $('lastUpdated').textContent=ok?`DX Summit · ostatni odbiór: ${new Date().toISOString().slice(11,19)} UTC · odświeżanie co 60 s`:'Oczekiwanie na dane z DX Summit…';
+    $('lastUpdated').textContent=ok?`Ostatni odbiór: ${new Date().toISOString().slice(11,19)} UTC · odświeżanie co 60 s`:'Oczekiwanie na dane…';
     $('notice').style.display=ok?'none':'block';
     $('notice').textContent=ok?'':detail;
-    $('sourceUsed').textContent=ok?`Aktywne źródło: DX Summit · ${state.spots.length} spotów`:'DX Summit nie odpowiada';
+    
   }
   async function refreshAll() {
     if(state.busy)return;
