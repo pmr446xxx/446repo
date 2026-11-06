@@ -35,7 +35,7 @@
   <div class="notice" id="notice" role="status"></div>
   <div class="table-scroll"><table><thead><tr><th>UTC</th><th>MHz</th><th>PASMO</th><th>MODE</th><th>STACJA DX</th><th>SPOTTER</th><th>KOMENTARZ</th></tr></thead><tbody id="rows"><tr><td class="empty" colspan="7">Łączenie z publicznymi feedami DX. Nie są wyświetlane dane demonstracyjne.</td></tr></tbody></table></div>
 </section>
-<footer class="footer"><span><b>CLUSTER BY KALBAR / ML5403</b></span><span class="source-credit">Dane publiczne: HamQTH.com · DX Cluster + RBN</span><span id="pollInfo">Automatyczne odświeżanie</span></footer>
+<footer class="footer"><span><b>CLUSTER BY KALBAR / ML5403</b></span><span class="source-credit">Live feed: HamQTH.com · DX Cluster + Reverse Beacon Network (RBN)</span><span id="pollInfo">Automatyczne odświeżanie</span></footer>
 </main>
 <script>
 'use strict';
@@ -72,22 +72,40 @@
     return 'OTHER';
   };
   function normalizeHam(body) {
-    return (Array.isArray(body?.spots) ? body.spots : []).map(s => {
-      const frequency = Number(s.freq), dx = normCall(s.dxcall), spotter = normCall(s.spotter);
+    if (!body || !Array.isArray(body.spots)) throw new Error('Nieprawidłowy format odpowiedzi HamQTH (oczekiwano tablicy spots).');
+    return body.spots.map(s => {
+      const frequency = Number(s?.freq), dx = normCall(s?.dxcall), spotter = normCall(s?.spotter);
       if (!(frequency > 0) || !dx || !spotter) return null;
-      const mode = String(s.mode || '—').toUpperCase();
-      return { dx, spotter, frequency, band: normalizeBand(s.band, frequency), mode, group: modeGroup(mode), message: String(s.comment || '').slice(0,180), time: parseTime(s.time) };
+      const mode = String(s?.mode || '—').toUpperCase();
+      return {
+        dx, spotter, frequency,
+        band: normalizeBand(s?.band, frequency),
+        mode, group: modeGroup(mode),
+        message: String(s?.comment || '').slice(0,180),
+        time: parseTime(s?.time)
+      };
     }).filter(Boolean);
   }
   function normalizeRbn(body) {
+    if (!body || !Array.isArray(body.spots)) throw new Error('Nieprawidłowy format odpowiedzi RBN (oczekiwano tablicy spots).');
     const output = [];
-    for (const s of (Array.isArray(body?.spots) ? body.spots : [])) {
-      const frequency = Number(s.freq), dx = normCall(s.dxcall);
+    for (const s of body.spots) {
+      const frequency = Number(s?.freq), dx = normCall(s?.dxcall);
       if (!(frequency > 0) || !dx) continue;
-      for (const skimmer of (Array.isArray(s.skimmers) ? s.skimmers : [])) {
-        const spotter = normCall(skimmer.call); if (!spotter) continue;
-        const snr = Number(skimmer.snr), mode = String(s.mode || 'CW').toUpperCase();
-        output.push({ dx, spotter, frequency, band: normalizeBand(s.band, frequency), mode, group: modeGroup(mode), message: Number.isFinite(snr) ? `SNR ${snr > 0 ? '+' : ''}${snr} dB` : 'RBN', time: Date.now() - Math.max(0, Number(s.age) || 0) * 1000 });
+      const mode = String(s?.mode || 'CW').toUpperCase();
+      const age = Math.max(0, Number(s?.age) || 0);
+      const skimmers = Array.isArray(s?.skimmers) ? s.skimmers : [];
+      for (const skimmer of skimmers) {
+        const spotter = normCall(skimmer?.call);
+        if (!spotter) continue;
+        const snr = Number(skimmer?.snr);
+        output.push({
+          dx, spotter, frequency,
+          band: normalizeBand(s?.band, frequency),
+          mode, group: modeGroup(mode),
+          message: Number.isFinite(snr) ? `SNR ${snr > 0 ? '+' : ''}${snr} dB` : 'RBN',
+          time: Date.now() - age * 1000
+        });
       }
     }
     return output;
@@ -109,12 +127,17 @@
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 11000);
     try {
       const response = await fetch(cfg.url, { method:'GET', mode:'cors', credentials:'omit', cache:'no-store', headers:{Accept:'application/json'}, signal:controller.signal });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        let detail = '';
+        try { const payload = await response.json(); detail = payload?.detail || payload?.title || payload?.message || ''; } catch (_) {}
+        throw new Error(detail ? `HTTP ${response.status}: ${detail}` : `HTTP ${response.status}`);
+      }
       const data = await response.json();
       const parsers = { ham:normalizeHam, rbn:normalizeRbn };
-      state.feeds[key] = { ok:true, items:parsers[key](data), fetchedAt:Date.now(), error:null };
+      const items = parsers[key](data);
+      state.feeds[key] = { ok:true, items, fetchedAt:Date.now(), error:null };
     } catch (error) {
-      state.feeds[key] = { ok:false, items:state.feeds[key]?.items || [], fetchedAt:state.feeds[key]?.fetchedAt || 0, error:error.name === 'AbortError' ? 'Przekroczono czas oczekiwania' : String(error.message || error).slice(0,120) };
+      state.feeds[key] = { ok:false, items:state.feeds[key]?.items || [], fetchedAt:state.feeds[key]?.fetchedAt || 0, error:error.name === 'AbortError' ? 'Przekroczono czas oczekiwania (12 s)' : String(error.message || error).slice(0,180) };
     } finally {
       clearTimeout(timer); state.busy[key] = false; merge(); updateStatus();
     }
