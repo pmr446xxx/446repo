@@ -12,8 +12,14 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
+      - name: Verify GitHub runner
+        run: |
+          echo "GitHub-hosted runner is available"
+          uname -a
+
       - name: Checkout source
         uses: actions/checkout@v4
 
@@ -23,12 +29,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Build Android APK with Gradle 8.9
-        uses: gradle/gradle-build-action@v3
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-          build-root-directory: 'MyLOGGER1-Android'
-          arguments: assembleDebug --stacktrace
+
+      - name: Build Android APK
+        working-directory: MyLOGGER1-Android
+        run: gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
