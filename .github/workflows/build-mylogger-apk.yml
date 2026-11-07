@@ -23,14 +23,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Gradle 8.9
-        uses: gradle/actions/setup-gradle@v4
+      - name: Build Android APK with Gradle 8.9
+        uses: gradle/gradle-build-action@v3
         with:
           gradle-version: '8.9'
-
-      - name: Build APK
-        working-directory: MyLOGGER1-Android
-        run: gradle assembleDebug --stacktrace
+          build-root-directory: 'MyLOGGER1-Android'
+          arguments: assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
