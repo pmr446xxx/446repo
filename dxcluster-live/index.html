@@ -164,6 +164,7 @@ for(const row of COUNTRY_EXACT_DATA.split("\n")){
   const entity=row.slice(0,sep);
   for(const callsign of row.slice(sep+1).split(","))if(callsign)COUNTRY_EXACT.set(callsign,entity);
 }
+COUNTRY_EXACT.set("VP2MCV","Montserrat");
 const PORTABLE_SUFFIXES = new Set(["P","M","MM","AM","QRP","QRPP","LH","LGT","MOBILE","PORTABLE"]);
 function countryEntityForPrefix(value){
   const call=String(value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
