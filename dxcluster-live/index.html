@@ -246,7 +246,7 @@
       $('rows').innerHTML=`<tr><td class="empty" colspan="7">${state.mode==='SSB'?'Brak spotów SSB dla wybranych filtrów.':'Brak spotów dla wybranych filtrów.'}</td></tr>`;
       return;
     }
-    $('rows').innerHTML=list.slice(0,700).map(s=>`<tr><td class="time">${new Date(s.time).toISOString().slice(11,19)}</td><td class="frequency">${(s.frequency/1000).toFixed(3)}</td><td><span class="band">${esc(s.band.toUpperCase())}</span></td><td><span class="mode ${modeClass(s.group)}">${esc(s.mode)}</span></td><td><span class="callsign"><a class="qrz-link" href="https://www.qrz.com/db/${encodeURIComponent(s.dx)}" target="_blank" rel="noopener noreferrer">${esc(s.dx)}</a></span></td><td><span class="spotter">${esc(s.spotter)}</span></td><td class="message" title="${esc(s.message)}">${esc(s.message||'—')}</td></tr>`).join('');
+    $('rows').innerHTML=list.slice(0,700).map(s=>`<tr><td class="time">${new Date(s.time).toISOString().slice(11,19)}</td><td class="frequency">${(s.frequency/1000).toFixed(3)}</td><td><span class="band">${esc(s.band.toUpperCase())}</span></td><td><span class="mode ${modeClass(s.group)}">${esc(s.mode)}</span></td><td><span class="callsign"><a class="qrz-link" href="https://www.qrz.com/db/${encodeURIComponent(s.dx)}" target="_blank" rel="noopener noreferrer">${esc(s.dx)}</a></span></td><td><span class="spotter"><a class="qrz-link" href="https://www.qrz.com/db/${encodeURIComponent(s.spotter)}" target="_blank" rel="noopener noreferrer">${esc(s.spotter)}</a></span></td><td class="message" title="${esc(s.message)}">${esc(s.message||'—')}</td></tr>`).join('');
   }
   function setStatus(ok,detail) {
     $('led').className='led'+(ok?'':' off');
