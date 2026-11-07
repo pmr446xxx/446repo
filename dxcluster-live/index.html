@@ -28,6 +28,14 @@
 @media(prefers-reduced-motion:reduce){.brand-frame{animation:none}}
 
 .group-label{border:1px solid #ff3b3b;border-radius:5px;padding:5px 8px}
+
+.signature,.signature span{animation:signatureColorCycle 6s ease-in-out infinite}
+@keyframes signatureColorCycle{
+  0%,100%{color:#ff3b3b}
+  50%{color:#9bffbd}
+}
+@media(prefers-reduced-motion:reduce){.signature,.signature span{animation:none;color:#ff3b3b}}
+
 </style>
 </head>
 <body>
