@@ -145,8 +145,12 @@
   const state = { spots:[], busy:false, band:'ALL', mode:'ALL', query:'' };
   const esc = value => String(value ?? '').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const normCall = value => String(value||'').trim().toUpperCase();
+  function cleanCallsign(callsign) {
+    return String(callsign||'').trim().toUpperCase().replace(/-@$/i,'');
+  }
   function qrzProfileUrl(callsign) {
-    const safeCall=encodeURIComponent(String(callsign||'').trim()).replace(/%2F/gi,'/');
+    const clean=cleanCallsign(callsign);
+    const safeCall=encodeURIComponent(clean).replace(/%2F/gi,'/');
     return 'https://www.qrz.com/db/'+safeCall;
   }
 
@@ -303,7 +307,7 @@ function countryForCallsign(value){
       $('rows').innerHTML=`<tr><td class="empty" colspan="7">${state.mode==='SSB'?'Brak spotów SSB dla wybranych filtrów.':'Brak spotów dla wybranych filtrów.'}</td></tr>`;
       return;
     }
-    $('rows').innerHTML=list.slice(0,700).map(s=>`<tr><td class="time">${new Date(s.time).toISOString().slice(11,19)}</td><td class="frequency">${(s.frequency/1000).toFixed(3)}</td><td><span class="band">${esc(s.band.toUpperCase())}</span></td><td><span class="mode ${modeClass(s.group)}">${esc(s.mode)}</span></td><td><span class="callsign"><a class="qrz-link" href="${qrzProfileUrl(s.dx)}" target="_blank" rel="noopener noreferrer">${esc(s.dx)}</a><span class="country-tag">(${esc(countryForCallsign(s.dx))})</span></span></td><td><span class="spotter"><a class="qrz-link" href="${qrzProfileUrl(s.spotter)}" target="_blank" rel="noopener noreferrer">${esc(s.spotter)}</a><span class="country-tag">(${esc(countryForCallsign(s.spotter))})</span></span></td><td class="message" title="${esc(s.message)}">${esc(s.message||'—')}</td></tr>`).join('');
+    $('rows').innerHTML=list.slice(0,700).map(s=>`<tr><td class="time">${new Date(s.time).toISOString().slice(11,19)}</td><td class="frequency">${(s.frequency/1000).toFixed(3)}</td><td><span class="band">${esc(s.band.toUpperCase())}</span></td><td><span class="mode ${modeClass(s.group)}">${esc(s.mode)}</span></td><td><span class="callsign"><a class="qrz-link" href="${qrzProfileUrl(s.dx)}" target="_blank" rel="noopener noreferrer">${esc(cleanCallsign(s.dx))}</a><span class="country-tag">(${esc(countryForCallsign(cleanCallsign(s.dx)))})</span></span></td><td><span class="spotter"><a class="qrz-link" href="${qrzProfileUrl(s.spotter)}" target="_blank" rel="noopener noreferrer">${esc(cleanCallsign(s.spotter))}</a><span class="country-tag">(${esc(countryForCallsign(cleanCallsign(s.spotter)))})</span></span></td><td class="message" title="${esc(s.message)}">${esc(s.message||'—')}</td></tr>`).join('');
   }
   function setStatus(ok,detail) {
     $('led').className='led'+(ok?'':' off');
