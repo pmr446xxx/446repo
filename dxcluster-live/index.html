@@ -76,8 +76,10 @@
 (() => {
   const $ = id => document.getElementById(id);
   const API = ['https://www.','dx','summit.fi/api/v1/spots'].join('');
-  const POLL_MS = 60000;
-  const REQUEST_TIMEOUT_MS = 15000;
+  const IS_MOBILE = window.matchMedia('(max-width:700px)').matches;
+  const POLL_MS = IS_MOBILE ? 30000 : 60000;
+  const POLL_SECONDS = POLL_MS / 1000;
+  const REQUEST_TIMEOUT_MS = 20000;
   const state = { spots:[], busy:false, band:'ALL', mode:'ALL', query:'' };
   const esc = value => String(value ?? '').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const normCall = value => String(value||'').trim().toUpperCase();
@@ -187,7 +189,7 @@
   function setStatus(ok,detail) {
     $('led').className='led'+(ok?'':' off');
     $('statusText').textContent=ok?'LIVE 446DX.PL':'BRAK POŁĄCZENIA';
-    $('lastUpdated').textContent=ok?`Ostatni odbiór: ${new Date().toISOString().slice(11,19)} UTC · odświeżanie co 60 s`:'Oczekiwanie na dane…';
+    $('lastUpdated').textContent=ok?`Ostatni odbiór: ${new Date().toISOString().slice(11,19)} UTC · odświeżanie co ${POLL_SECONDS} s`:'Oczekiwanie na dane…';
     $('notice').style.display=ok?'none':'block';
     $('notice').textContent=ok?'':detail;
     
@@ -218,7 +220,13 @@
   });
   $('refresh').addEventListener('click',refreshAll);
   const updateClock=()=>$('utc').textContent=`UTC ${new Date().toISOString().slice(11,19)}`;
-  updateClock();setInterval(updateClock,1000);render();refreshAll();setInterval(refreshAll,POLL_MS);
+  updateClock();setInterval(updateClock,1000);
+  $('pollInfo').textContent=`Automatyczne odświeżanie co ${POLL_SECONDS} s`;
+  render();refreshAll();
+  setInterval(()=>{if(document.visibilityState==='visible')refreshAll();},POLL_MS);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshAll();});
+  window.addEventListener('pageshow',event=>{if(event.persisted)refreshAll();});
+  window.addEventListener('online',refreshAll);
 })();
 </script>
 </body>
